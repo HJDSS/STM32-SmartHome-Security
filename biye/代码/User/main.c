@@ -48,7 +48,11 @@ static sensor_state_t g_sensor;
 static esp_state_t g_esp;
 extern volatile u32 g_net_reconnect_count;
 extern volatile u32 g_net_offline_count;
+extern volatile u16 g_cap_replay_count;
+extern volatile u16 g_cap_sd_write_fail_count;
 volatile unsigned char g_as608_user_abort = 0u;
+static volatile u32 g_false_alarm_count = 0u;
+static volatile u32 g_runtime_exception_count = 0u;
 
 void AS608_PollYield(void)
 {
@@ -116,7 +120,7 @@ static void app_init(void)
     USART2_Init_Config(BOARD_WIFI_UART_BAUD);
 
     BEEP_AND_RELAY_GPIO_Init();
-    RELAY = 1;
+    Actuator_EnterSafeState();
     Key_Init();
     TIM2_Init(7199, 99);
     HC_SR501_Init();
@@ -198,6 +202,11 @@ static void app_poll_sensors(void)
     if(HC_SR501_IRQHandler_GetFlag())
     {
         HC_SR501_IRQHandler_ClearFlag();
+        if(!security_mode)
+        {
+            g_false_alarm_count++;
+            SysLog_Add(LOG_EVT_CONFIG, "PIR_FALSE_ALARM");
+        }
         if((u32)(now - s_pir_quiet_until) < 3000000000u)
         {
             g_sensor.pir_alarm = 1u;
@@ -211,6 +220,24 @@ static void app_poll_sensors(void)
     {
         g_sensor.pir_alarm = 0u;
     }
+}
+
+static void app_report_stats(void)
+{
+    static u32 s_last_ms = 0u;
+    char line[160];
+    u32 now = Bare_GetTickMs();
+    if((u32)(now - s_last_ms) < 30000u) return;
+    s_last_ms = now;
+    sprintf(line,
+            "[STAT] false_alarm=%lu reconnect=%lu replay=%u sd_fail=%u run_ex=%lu",
+            (unsigned long)g_false_alarm_count,
+            (unsigned long)g_net_reconnect_count,
+            (unsigned)g_cap_replay_count,
+            (unsigned)g_cap_sd_write_fail_count,
+            (unsigned long)g_runtime_exception_count);
+    uart1_SendStr(line);
+    uart1_SendStr("\r\n");
 }
 
 static void app_poll_alarm_and_act(void)
@@ -260,6 +287,7 @@ static void app_poll_net(void)
     {
         uart1_SendStr("[NET] offline\r\n");
         SysLog_Add(LOG_EVT_ALARM, "NET_OFFLINE");
+        g_runtime_exception_count++;
     }
     if(g_net_reconnect_count != s_last_reconnect_cnt)
     {
@@ -304,6 +332,7 @@ int main(void)
         app_poll_alarm_and_act();
         app_poll_net();
         Bare_CapturePoll();
+        app_report_stats();
         OLED_View_RefreshDashboard(&g_sensor, LockManager_GetState(), &g_esp);
         delay_ms(20);
     }

@@ -6,6 +6,7 @@
 
 /* 门锁：与 board_config.h BOARD_DOOR_LOCK 一致（默认 PC6=PCout(6)）。PB12 仅作 SD_CS，勿作 RELAY */
 #define RELAY  PCout(6)
+#define GAS_VALVE_RELAY PCout(7)
 
 /* ������ PC10����/ͣ�ɽӿڷ�װ�����Լ� board_config.h �� BOARD_BEEP_ACTIVE_HIGH */
 static inline void BEEP_SoundOn(void)
@@ -36,5 +37,6 @@ static inline void BEEP_Toggle(void)
 
 void BEEP_AND_RELAY_GPIO_Init(void);
 void BEEP_Selftest_Extended(void);
+void Actuator_EnterSafeState(void);
 
 #endif

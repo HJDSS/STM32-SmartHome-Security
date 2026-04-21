@@ -10,7 +10,7 @@ void BEEP_AND_RELAY_GPIO_Init(void)
 {
 	GPIO_InitTypeDef GPIO_InitStructure;
 
-	RCC_APB2PeriphClockCmd(BOARD_DOOR_LOCK_CLK | BOARD_BEEP_CLK, ENABLE);
+	RCC_APB2PeriphClockCmd(BOARD_DOOR_LOCK_CLK | BOARD_GAS_VALVE_RELAY_CLK | BOARD_BEEP_CLK, ENABLE);
 
 	GPIO_InitStructure.GPIO_Pin = BOARD_DOOR_LOCK_PIN;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD;
@@ -22,6 +22,20 @@ void BEEP_AND_RELAY_GPIO_Init(void)
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(BOARD_BEEP_PORT, &GPIO_InitStructure);
+
+	GPIO_InitStructure.GPIO_Pin = BOARD_GAS_VALVE_RELAY_PIN;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(BOARD_GAS_VALVE_RELAY_PORT, &GPIO_InitStructure);
+
+	Actuator_EnterSafeState();
+}
+
+void Actuator_EnterSafeState(void)
+{
+	/* 默认安全态：门锁恢复默认关闭、燃气阀关闭、蜂鸣器关闭 */
+	RELAY = 1;
+	GAS_VALVE_RELAY = 1;
 	BEEP_SoundOff();
 }
 

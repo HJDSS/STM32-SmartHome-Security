@@ -39,6 +39,8 @@ volatile u8 g_capture_busy = 0;
 #if EN_OV7670_LOCAL
 static FATFS s_fatfs;
 static u8 s_fat_mounted;
+volatile u16 g_cap_replay_count = 0u;
+volatile u16 g_cap_sd_write_fail_count = 0u;
 #define CAP_OFFLINE_Q_DEPTH  8u
 typedef struct
 {
@@ -94,6 +96,7 @@ static void capture_flush_offline_queue(void)
 			s_cap_q[s_cap_q_head].used = 0u;
 			s_cap_q_head = (u8)((s_cap_q_head + 1u) % CAP_OFFLINE_Q_DEPTH);
 			s_cap_q_flush_ok++;
+			g_cap_replay_count++;
 			SysLog_Add(LOG_EVT_CONFIG, "CAP_Q_FLUSH_OK");
 		}
 		else
@@ -203,7 +206,10 @@ static void capture_one_to_sd(void)
 	if(fr == FR_OK)
 		Capture_OnSaved(name);
 	else
+	{
+		g_cap_sd_write_fail_count++;
 		SysLog_Add(LOG_EVT_ALARM, "CAP_SD_WRITE_FAIL");
+	}
 }
 #endif
 
