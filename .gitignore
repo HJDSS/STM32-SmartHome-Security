@@ -1,0 +1,25 @@
+.venv/
+__pycache__/
+
+# VSCode/Cursor local settings (keep tasks.json tracked)
+.vscode/keybindings.json
+.vscode/settings.json
+
+# Keil / MDK build outputs
+biye/代码/Output/
+**/Listings/
+**/*.o
+**/*.d
+**/*.crf
+**/*.dep
+**/*.lnp
+**/*.htm
+**/*.build_log.htm
+**/*.map
+**/*.axf
+**/*.hex
+**/*.bin
+
+# OS junk
+Thumbs.db
+Desktop.ini
