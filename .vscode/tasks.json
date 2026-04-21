@@ -1,0 +1,128 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Keil: Build (UV4)",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "$ErrorActionPreference='Stop'; $uv4='C:\\Keil_v5\\UV4\\UV4.exe'; if(-not (Test-Path $uv4)){ throw 'UV4.exe not found at C:\\Keil_v5\\UV4\\UV4.exe'; }; $proj=(Get-ChildItem -Path '${workspaceFolder}\\biye\\代码\\User' -Filter '*.uvprojx' | Select-Object -First 1); if(-not $proj){ throw 'No .uvprojx found in biye\\代码\\User'; }; & $uv4 -j0 -b $proj.FullName -t 'Target 1' -o ('${workspaceFolder}\\biye\\代码\\Output\\build.log'); if($LASTEXITCODE -ne 0){ exit $LASTEXITCODE; }"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [
+        "$keilBuild"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "Keil: Verify Binaries",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}\\.vscode\\post_build_verify.ps1",
+        "-OutputDir",
+        "${workspaceFolder}\\biye\\代码\\Output",
+        "-MapPath",
+        "${workspaceFolder}\\biye\\代码\\User\\Listings\\程序.map",
+        "-MaxBinSizeKB",
+        "512"
+      ],
+      "problemMatcher": [],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "Keil: Build + Verify",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Keil: Build (UV4)",
+        "Keil: Verify Binaries"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Keil: Open build.log",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "$log='${workspaceFolder}\\biye\\代码\\Output\\build.log'; if(-not (Test-Path $log)){ throw \"build.log not found: $log\" }; Start-Process $log"
+      ],
+      "problemMatcher": [],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "Keil: Build + Open Log",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Keil: Build (UV4)",
+        "Keil: Open build.log"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Keil: Smart Build (Fail->Log / Success->Verify)",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "$ErrorActionPreference='Stop'; $root='${workspaceFolder}'; $uv4='C:\\Keil_v5\\UV4\\UV4.exe'; $proj=(Get-ChildItem -Path \"$root\\biye\\代码\\User\" -Filter '*.uvprojx' | Select-Object -First 1); $log=\"$root\\biye\\代码\\Output\\build.log\"; if(-not (Test-Path $uv4)){ throw 'UV4.exe not found at C:\\Keil_v5\\UV4\\UV4.exe'; }; if(-not $proj){ throw 'No .uvprojx found in biye\\代码\\User'; }; & $uv4 -j0 -b $proj.FullName -t 'Target 1' -o $log; $ec=$LASTEXITCODE; if($ec -ne 0){ if(Test-Path $log){ Start-Process $log }; exit $ec }; & powershell -NoProfile -ExecutionPolicy Bypass -File \"$root\\.vscode\\post_build_verify.ps1\" -OutputDir \"$root\\biye\\代码\\Output\" -MapPath \"$root\\biye\\代码\\User\\Listings\\程序.map\" -MaxBinSizeKB 512; exit $LASTEXITCODE"
+      ],
+      "group": "build",
+      "problemMatcher": [
+        "$keilBuild"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    }
+  ],
+  "problemMatchers": [
+    {
+      "name": "keilBuild",
+      "owner": "cpp",
+      "fileLocation": [
+        "relative",
+        "${workspaceFolder}"
+      ],
+      "pattern": [
+        {
+          "regexp": "^\"?([^\",]+)\"?,\\s*line\\s*(\\d+)\\s*:\\s*(Warning|Error):\\s*(.*)$",
+          "file": 1,
+          "line": 2,
+          "severity": 3,
+          "message": 4
+        },
+        {
+          "regexp": "^(.*)\\((\\d+)\\):\\s*(warning|error):\\s*(.*)$",
+          "file": 1,
+          "line": 2,
+          "severity": 3,
+          "message": 4
+        }
+      ]
+    }
+  ]
+}
