@@ -17,6 +17,9 @@
 
 #include "delay.h"
 #include "linkage.h"
+#include "esp8266_tls.h"
+#include "esp8266_onenet_mqtt.h"
+#include "syslog.h"
 
 /* 兼容需求中函数名 */
 #define OV7670_StartCapture()     OV7670_FIFO_StartCapture()
@@ -36,6 +39,71 @@ volatile u8 g_capture_busy = 0;
 #if EN_OV7670_LOCAL
 static FATFS s_fatfs;
 static u8 s_fat_mounted;
+#define CAP_OFFLINE_Q_DEPTH  8u
+typedef struct
+{
+	u8 used;
+	u32 tick;
+	char name[32];
+} cap_offline_item_t;
+static cap_offline_item_t s_cap_q[CAP_OFFLINE_Q_DEPTH];
+static u8 s_cap_q_head = 0u;
+static u8 s_cap_q_tail = 0u;
+static u16 s_cap_q_drop = 0u;
+static u16 s_cap_q_flush_ok = 0u;
+static u16 s_cap_q_flush_fail = 0u;
+
+static u8 capture_publish_saved(const char *filename, u32 tick)
+{
+	char topic[120];
+	char payload[192];
+	if(filename == NULL) return 0u;
+	if(ESP8266_Online_Flag == 0u) return 0u;
+	sprintf(topic, "$sys/%s/%s/thing/property/post", ONENET_PRODUCT_ID, ONENET_DEVICE_NAME);
+	sprintf(payload,
+			"{\"id\":\"cap%lu\",\"version\":\"1.0\",\"params\":{\"capture_path\":{\"value\":\"%s\"},\"capture_ts\":{\"value\":%lu}}}",
+			(unsigned long)tick, filename, (unsigned long)tick);
+	return OneNET_AT_Mqtt_PublishRaw(topic, payload, (u16)strlen(payload));
+}
+
+static void capture_enqueue_saved(const char *filename, u32 tick)
+{
+	u8 next;
+	if(filename == NULL) return;
+	next = (u8)((s_cap_q_tail + 1u) % CAP_OFFLINE_Q_DEPTH);
+	if(next == s_cap_q_head && s_cap_q[s_cap_q_head].used)
+	{
+		s_cap_q_head = (u8)((s_cap_q_head + 1u) % CAP_OFFLINE_Q_DEPTH);
+		s_cap_q_drop++;
+		SysLog_Add(LOG_EVT_ALARM, "CAP_Q_DROP");
+	}
+	s_cap_q[s_cap_q_tail].used = 1u;
+	s_cap_q[s_cap_q_tail].tick = tick;
+	strncpy(s_cap_q[s_cap_q_tail].name, filename, sizeof(s_cap_q[s_cap_q_tail].name) - 1u);
+	s_cap_q[s_cap_q_tail].name[sizeof(s_cap_q[s_cap_q_tail].name) - 1u] = '\0';
+	s_cap_q_tail = next;
+}
+
+static void capture_flush_offline_queue(void)
+{
+	while(s_cap_q_head != s_cap_q_tail && s_cap_q[s_cap_q_head].used)
+	{
+		if(ESP8266_Online_Flag == 0u) break;
+		if(capture_publish_saved(s_cap_q[s_cap_q_head].name, s_cap_q[s_cap_q_head].tick))
+		{
+			s_cap_q[s_cap_q_head].used = 0u;
+			s_cap_q_head = (u8)((s_cap_q_head + 1u) % CAP_OFFLINE_Q_DEPTH);
+			s_cap_q_flush_ok++;
+			SysLog_Add(LOG_EVT_CONFIG, "CAP_Q_FLUSH_OK");
+		}
+		else
+		{
+			s_cap_q_flush_fail++;
+			SysLog_Add(LOG_EVT_ALARM, "CAP_Q_FLUSH_FAIL");
+			break;
+		}
+	}
+}
 
 /* 本地 OV7670 抓拍；键盘 Y3/Y4 固定 PB1/PB2（与 PA0~PA7 数据口无共脚）。 */
 static void write_bmp_header_rgb565_bottom_up(FIL *fp)
@@ -134,6 +202,8 @@ static void capture_one_to_sd(void)
 
 	if(fr == FR_OK)
 		Capture_OnSaved(name);
+	else
+		SysLog_Add(LOG_EVT_ALARM, "CAP_SD_WRITE_FAIL");
 }
 #endif
 
@@ -144,17 +214,35 @@ __weak void Capture_OnSaved(const char *filename)
 	if(filename == NULL) return;
 	sprintf(msg, "CAPTURE:SAVED:%s", filename);
 	Linkage_MQTT_Report(msg);
+#if EN_OV7670_LOCAL
+	{
+		u32 tick = Bare_GetTickMs();
+	if(capture_publish_saved(filename, tick))
+	{
+		SysLog_Add(LOG_EVT_CONFIG, "CAP_UP_OK");
+	}
+	else
+	{
+		capture_enqueue_saved(filename, tick);
+		SysLog_Add(LOG_EVT_ALARM, "CAP_UP_DEFER");
+	}
+	}
+#endif
 }
 
 void Bare_CapturePoll(void)
 {
 #if EN_OV7670_LOCAL
 	if(g_cap_evt_pending == 0u)
+	{
+		capture_flush_offline_queue();
 		return;
+	}
 	if(g_capture_busy)
 		return;
 	g_cap_evt_pending = 0u;
 	capture_one_to_sd();
+	capture_flush_offline_queue();
 	delay_ms(50);
 #else
 	(void)0;
