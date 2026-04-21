@@ -3,6 +3,12 @@
 #include "oled_view.h"
 #include "linkage.h"
 #include "board_config.h"
+#include "gpio.h"
+#include "oled.h"
+#include "delay.h"
+#include <stddef.h>
+
+extern volatile u8 RELAY_TIME;
 
 static lock_state_t s_lock;
 

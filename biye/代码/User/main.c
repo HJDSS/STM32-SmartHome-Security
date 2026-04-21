@@ -48,6 +48,12 @@ static sensor_state_t g_sensor;
 static esp_state_t g_esp;
 extern volatile u32 g_net_reconnect_count;
 extern volatile u32 g_net_offline_count;
+volatile unsigned char g_as608_user_abort = 0u;
+
+void AS608_PollYield(void)
+{
+    KeyboardSM_Tick();
+}
 
 void CLR_Buf2(void)
 {
@@ -225,7 +231,7 @@ static void app_poll_alarm_and_act(void)
         if(alarm == ALARM_GAS || alarm == ALARM_BOTH)
             Linkage_OnMQ2_Alarm();
 #if EN_OV7670_LOCAL
-        Capture_Request(CAP_EVT_PIR);
+        Capture_Request(CAP_EVT_INTRUSION);
 #endif
     }
     else

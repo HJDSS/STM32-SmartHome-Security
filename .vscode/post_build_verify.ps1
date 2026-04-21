@@ -15,23 +15,17 @@ function Write-Info([string]$msg) {
     Write-Host "[VERIFY] $msg"
 }
 
-function Resolve-FirstFile([string]$dir, [string[]]$patterns) {
-    foreach ($pattern in $patterns) {
-        $f = Get-ChildItem -Path $dir -Filter $pattern -File -ErrorAction SilentlyContinue | Select-Object -First 1
-        if ($null -ne $f) { return $f }
-    }
-    return $null
-}
-
 if (-not (Test-Path $OutputDir)) {
     throw "Output directory not found: $OutputDir"
 }
 
-$binFile = Resolve-FirstFile -dir $OutputDir -patterns @("*.bin")
-$hexFile = Resolve-FirstFile -dir $OutputDir -patterns @("*.hex")
-$axfFile = Resolve-FirstFile -dir $OutputDir -patterns @("*.axf", "*.elf")
+$allFiles = Get-ChildItem -LiteralPath $OutputDir -File -ErrorAction SilentlyContinue
+$binFile = $allFiles | Where-Object { $_.Extension -ieq ".bin" } | Select-Object -First 1
+$hexFile = $allFiles | Where-Object { $_.Extension -ieq ".hex" } | Select-Object -First 1
+$axfFile = $allFiles | Where-Object { $_.Extension -ieq ".axf" -or $_.Extension -ieq ".elf" } | Select-Object -First 1
 
 if ($null -eq $binFile -and $null -eq $hexFile -and $null -eq $axfFile) {
+    Write-Info ("OutputDir scanned files: {0}" -f ($allFiles.Count))
     throw "No binary artifacts found in $OutputDir (need at least one of .bin/.hex/.axf)."
 }
 

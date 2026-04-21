@@ -1,6 +1,7 @@
 #include "oled_view.h"
 #include "oled.h"
 #include "board_config.h"
+#include "delay.h"
 #include <stdio.h>
 
 void OLED_View_Init(void)
