@@ -46,6 +46,8 @@ static volatile u16 s_uart3_wr = 0;
 
 static sensor_state_t g_sensor;
 static esp_state_t g_esp;
+extern volatile u32 g_net_reconnect_count;
+extern volatile u32 g_net_offline_count;
 
 void CLR_Buf2(void)
 {
@@ -135,6 +137,8 @@ static void app_poll_sensors(void)
     static u32 s_dht_ms = 0;
     static u32 s_mq2_ms = 0;
     static u32 s_pir_quiet_until = 0;
+    static u8 s_dht_was_ok = 1u;
+    static u8 s_mq2_was_alarm = 0u;
     u32 now = Bare_GetTickMs();
 
     if((u32)(now - s_dht_ms) >= 2000u)
@@ -154,7 +158,18 @@ static void app_poll_sensors(void)
         {
             dht11_data_valid = 0u;
             g_sensor.dht_ok = 0u;
+            if(s_dht_was_ok)
+            {
+                uart1_SendStr("[SENSOR] DHT offline\r\n");
+                SysLog_Add(LOG_EVT_ALARM, "DHT_OFFLINE");
+            }
         }
+        if(g_sensor.dht_ok && !s_dht_was_ok)
+        {
+            uart1_SendStr("[SENSOR] DHT recover\r\n");
+            SysLog_Add(LOG_EVT_CONFIG, "DHT_RECOVER");
+        }
+        s_dht_was_ok = g_sensor.dht_ok;
     }
 
     if((u32)(now - s_mq2_ms) >= 250u)
@@ -163,6 +178,15 @@ static void app_poll_sensors(void)
         mq2_adc_value = MQ2_Read_ADC_Filter();
         g_sensor.mq2_adc = mq2_adc_value;
         g_sensor.mq2_alarm = MQ2_Check_Alarm(mq2_adc_value);
+        if(g_sensor.mq2_alarm && !s_mq2_was_alarm)
+        {
+            uart1_SendStr("[SENSOR] MQ2 alarm on\r\n");
+        }
+        if(!g_sensor.mq2_alarm && s_mq2_was_alarm)
+        {
+            uart1_SendStr("[SENSOR] MQ2 alarm clear\r\n");
+        }
+        s_mq2_was_alarm = g_sensor.mq2_alarm;
     }
 
     if(HC_SR501_IRQHandler_GetFlag())
@@ -214,10 +238,38 @@ static void app_poll_alarm_and_act(void)
 
 static void app_poll_net(void)
 {
+    static u8 s_last_online = 0u;
+    static u32 s_last_reconnect_cnt = 0u;
+    static u32 s_last_offline_cnt = 0u;
 #if EN_ESP8266_ONENET
     ESP8266_OneNET_InitFsm_Poll();
     g_esp.wifi_ready = tls_inited ? 1u : 0u;
     g_esp.hb_ok = ESP8266_Online_Flag ? 1u : 0u;
+    if(ESP8266_Online_Flag && !s_last_online)
+    {
+        uart1_SendStr("[NET] online\r\n");
+        SysLog_Add(LOG_EVT_CONFIG, "NET_RECOVER");
+    }
+    if(!ESP8266_Online_Flag && s_last_online)
+    {
+        uart1_SendStr("[NET] offline\r\n");
+        SysLog_Add(LOG_EVT_ALARM, "NET_OFFLINE");
+    }
+    if(g_net_reconnect_count != s_last_reconnect_cnt)
+    {
+        char msg[48];
+        sprintf(msg, "NET_RECONN_%lu", (unsigned long)g_net_reconnect_count);
+        SysLog_Add(LOG_EVT_CONFIG, msg);
+        s_last_reconnect_cnt = g_net_reconnect_count;
+    }
+    if(g_net_offline_count != s_last_offline_cnt)
+    {
+        char msg[48];
+        sprintf(msg, "NET_OFF_%lu", (unsigned long)g_net_offline_count);
+        SysLog_Add(LOG_EVT_ALARM, msg);
+        s_last_offline_cnt = g_net_offline_count;
+    }
+    s_last_online = ESP8266_Online_Flag ? 1u : 0u;
     if(ESP8266_Online_Flag)
     {
         OneNET_Parse_Cmd();
@@ -229,6 +281,7 @@ static void app_poll_net(void)
 #else
     g_esp.wifi_ready = 0u;
     g_esp.hb_ok = 0u;
+    s_last_online = 0u;
 #endif
 }
 

@@ -67,10 +67,38 @@ volatile u8 g_net_stage = 0;
 volatile u8 g_wifi_fail_reason = 0;
 volatile u8 g_wifi_substage = 0;
 volatile u8 g_wifi_err = 0;
+volatile u32 g_net_reconnect_count = 0;
+volatile u32 g_net_offline_count = 0;
 
 /* 前向声明：供 CWLAP 辅助函数使用 */
 static u8 WaitSubstr(const char *sub, u16 timeout_ms);
 static void ESP8266_Debug_DumpBootInfo(void);
+static void Net_LogSimple(const char *msg);
+static void Net_MarkOffline(const char *reason);
+
+static void Net_LogSimple(const char *msg)
+{
+		if(msg == NULL) return;
+		UART1_SendStr((char *)msg);
+		UART1_SendStr("\r\n");
+}
+
+static void Net_MarkOffline(const char *reason)
+{
+		if(ESP8266_Online_Flag != 0u)
+		{
+				g_net_offline_count++;
+				Net_LogSimple("[NET] offline");
+		}
+		ESP8266_Online_Flag = 0u;
+		tls_inited = 0u;
+		if(reason != NULL)
+		{
+				UART1_SendStr("[NET] reason: ");
+				UART1_SendStr((char *)reason);
+				UART1_SendStr("\r\n");
+		}
+}
 
 /* 2.4G 常用信道上限：手机热点若跑到 12/13 往往连不上 */
 #ifndef WIFI_MAX_CHANNEL
@@ -659,6 +687,8 @@ void ESP8266_OneNET_InitFsm_Poll(void)
 		case 2:
 				if((u32)(now - s_onenet_t0) < (u32)ESP_AT_BOOT_DELAY_MS)
 						return;
+				g_net_reconnect_count++;
+				Net_LogSimple("[NET] reconnect begin");
 				ESP8266_Online_Flag = 0;
 				g_wifi_fail_reason = 0u;
 				g_wifi_substage = 0u;
@@ -682,6 +712,7 @@ void ESP8266_OneNET_InitFsm_Poll(void)
 				if(s_tls_hs_n >= (u8)ESP_AT_HANDSHAKE_RETRIES)
 				{
 						g_wifi_fail_reason = 1u;
+						Net_MarkOffline("AT handshake failed");
 						UART1_SendStr("[OneNET] 模块AT握手失败(FSM)\r\n");
 						ESP8266_RESET();
 						s_onenet_mst = 0;
@@ -737,6 +768,7 @@ void ESP8266_OneNET_InitFsm_Poll(void)
 				if(!ESP8266_Connect_WiFi())
 				{
 						g_wifi_fail_reason = 2u;
+						Net_MarkOffline("WiFi join failed");
 						UART1_SendStr("[OneNET] WiFi连接失败(FSM)\r\n");
 						ESP8266_RESET();
 						s_onenet_mst = 0;
@@ -755,6 +787,7 @@ void ESP8266_OneNET_InitFsm_Poll(void)
 				if(mr == 2)
 				{
 						g_wifi_fail_reason = 3u;
+						Net_MarkOffline("MQTT connect failed");
 						UART1_SendStr("[OneNET] MQTT连接失败(FSM)\r\n");
 						ESP8266_RESET();
 						ESP8266_OneNET_MqttFsm_Reset();
@@ -765,6 +798,7 @@ void ESP8266_OneNET_InitFsm_Poll(void)
 				tls_inited = 1;
 				g_wifi_fail_reason = 0u;
 				g_net_stage = 4;
+				Net_LogSimple("[NET] reconnect success");
 				UART1_SendStr("[OneNET] WiFi与MQTT鉴权成功(FSM)\r\n");
 				s_onenet_mst = 100;
 				return;
@@ -817,6 +851,10 @@ void OneNET_Parse_Cmd(void)
 		char *p;
 		unsigned v;
 		const char *scan = Uart2_Buf;
+		unsigned cmd_id = 0u;
+		unsigned cmd_ts = 0u;
+		static unsigned last_cmd_id = 0u;
+		static unsigned last_cmd_ts = 0u;
 
 		if(Uart2_Buf[0] == 0) return;
 
@@ -824,6 +862,24 @@ void OneNET_Parse_Cmd(void)
 		p = strstr(Uart2_Buf, "+MQTTSUBRECV:");
 		if(p != NULL)
 				scan = p;
+
+		/* 下行命令幂等：基于 cmdId + ts 去重，避免重连后重复执行。 */
+		p = strstr(scan, "\"cmdId\"");
+		if(p != NULL)
+		{
+				if(sscanf(p, "\"cmdId\":%u", &cmd_id) == 1)
+				{
+						char *pt = strstr(scan, "\"ts\"");
+						if(pt != NULL) (void)sscanf(pt, "\"ts\":%u", &cmd_ts);
+						if(cmd_id == last_cmd_id && cmd_ts == last_cmd_ts)
+						{
+								Net_LogSimple("[NET] dedup duplicate cmd");
+								return;
+						}
+						last_cmd_id = cmd_id;
+						last_cmd_ts = cmd_ts;
+				}
+		}
 
 		UART1_SendStr("收到平台下发指令:\r\n");
 		UART1_SendStr(Uart2_Buf);
