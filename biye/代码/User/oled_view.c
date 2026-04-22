@@ -156,8 +156,17 @@ void OLED_View_ShowNetState(u8 wifi_ok, u8 hb_ok)
 void OLED_View_RefreshDashboard(const sensor_state_t *sensor, const lock_state_t *lock, const esp_state_t *esp)
 {
     char line[17];
+    static u32 s_frame_count = 0u;
+    u32 frame_mod;
+    u32 tick_100ms;
+
     if(sensor == NULL || lock == NULL || esp == NULL)
         return;
+
+    /* [M1.8] 每次刷新 +1；用于快速判定 main 循环是否在跑 */
+    s_frame_count++;
+    frame_mod  = s_frame_count % 100u;
+    tick_100ms = (Bare_GetTickMs() / 100u) % 1000u;
 
     OLED_BatchBegin();
     OLED_View_ShowNetState(esp->wifi_ready, esp->hb_ok);
@@ -170,6 +179,20 @@ void OLED_View_RefreshDashboard(const sensor_state_t *sensor, const lock_state_t
 
     sprintf(line, "T:%02u H:%02u MQ:%u", sensor->temp, sensor->humi, sensor->mq2_adc);
     OLED_ShowString(0, 32, line, 16);
-    OLED_ShowString(0, 48, lock->armed ? "ARMED           " : "DISARMED        ", 16);
+
+    /* [M1.8] 第 3 行嵌入两个心跳计数：
+     *   F = OLED_View_RefreshDashboard 调用次数 mod 100（主循环到这一行就 +1）
+     *   T = Bare_GetTickMs() / 100 mod 1000（SysTick 毫秒计数 /100）
+     * 读数规则：
+     *   两者都在变 → main 循环活着、SysTick 正常；FSM 还卡就去查 InitFsm_Poll
+     *   只有 F 在变 T 不动 → SysTick 没在跑/被某个 IRQ 抢占；FSM 所有时间条件失效
+     *   两者都不动 → main 循环卡在 OLED 刷新之前（上面某个 Tick/Poll 里死循环）
+     * 严格 16 字符一行，避免局部残留。 */
+    if(lock->armed)
+        sprintf(line, "ARMED  F%02lu T%03lu", (unsigned long)frame_mod, (unsigned long)tick_100ms);
+    else
+        sprintf(line, "DISARM F%02lu T%03lu", (unsigned long)frame_mod, (unsigned long)tick_100ms);
+    line[16] = '\0';
+    OLED_ShowString(0, 48, line, 16);
     OLED_BatchEnd();
 }
