@@ -2,6 +2,7 @@
 #include "oled.h"
 #include "board_config.h"
 #include "delay.h"
+#include "esp8266_tls.h"  /* [M1.7] 读 g_net_stage / g_wifi_substage / g_wifi_err / g_wifi_fail_reason */
 #include <stdio.h>
 
 void OLED_View_Init(void)
@@ -61,12 +62,95 @@ void OLED_View_ShowAlarm(alarm_type_t alarm)
     }
 }
 
+/* [M1.7] 4 字段阶段名：与 esp8266_tls.c g_net_stage 枚举一致。
+ * 每个名字都定长 4 字符（不足补空格），这样 OLED 顶行总长严格 16 字符，
+ * 不会出现局部刷新把上一帧残留字符留在屏上。 */
+static const char *net_stage_name(u8 s)
+{
+    switch(s)
+    {
+        case 0:  return "IDLE";
+        case 1:  return "AT  ";
+        case 2:  return "WIFI";
+        case 3:  return "MQTT";
+        case 4:  return "OK  ";
+        default: return "????";
+    }
+}
+
+/* [M1.7] OLED 联网状态行（顶行，16×16 字体，每行严格 16 字符）。
+ *
+ * 为什么改成这样：以前未连上时只显示 "NET:INIT"，缺少任何定位信息。
+ * 现在把 ESP8266 FSM 四个状态量编码进顶行：
+ *   - g_net_stage       : 0=IDLE 1=AT 2=WIFI 3=MQTT 4=OK
+ *   - g_wifi_substage   : 1=AT 20=CWMODE 21=CWJAP 22=WAIT_IP 23=OK 210=CWLAP
+ *   - g_wifi_err        : 0=无 1=CWLAP找不到SSID 2=信道不支持 3=CWJAP超时 4=CWMODE失败
+ *   - g_wifi_fail_reason: 0=无 1=AT握手 2=WiFi连接 3=MQTT连接
+ *
+ * 输出样例（各行皆严格 16 字符）：
+ *   正常进行中：
+ *     "NET:AT   S01 E0 "   AT 握手中
+ *     "NET:WIFI S20 E0 "   已进 WiFi 阶段，正在设 CWMODE
+ *     "NET:WIFI S21 E0 "   正在 CWJAP（加入路由器），最容易卡住的阶段
+ *     "NET:WIFI S22 E3 "   CWJAP 超时失败（err=3）
+ *     "NET:MQTT S00 E0 "   WiFi 已 OK，正在做 OneNET MQTT 建链
+ *     "NET:OK   HB:OK  "   全部成功，心跳也 OK（老版已有）
+ *     "NET:OK   HB:--  "   建链成功但心跳超时（老版已有）
+ *   已经失败（fail_reason 非 0 时优先展示，让你立刻看出故障分类）：
+ *     "NET:ERR AT RST  "   AT 握手失败，已触发 EN 硬复位重试
+ *     "NET:ERR WiFi e3 "   WiFi 接入失败（err 码见上）
+ *     "NET:ERR MQTT    "   WiFi 通了但 OneNET MQTT 连不上
+ *
+ * 由于 g_wifi_substage 可能出现 210（CWLAP 自检阶段），显示前做截断 0..99，
+ * 保证 "S%02u" 始终占 3 个字符而不把后续字段挤掉。 */
 void OLED_View_ShowNetState(u8 wifi_ok, u8 hb_ok)
 {
+    char line[17];
+    u8 sub;
+    u8 stage;
+    u8 err;
+    u8 fail;
+
     if(wifi_ok)
+    {
         OLED_ShowString(0, 0, hb_ok ? "NET:OK HB:OK    " : "NET:OK HB:--    ", 16);
-    else
-        OLED_ShowString(0, 0, "NET:INIT        ", 16);
+        return;
+    }
+
+    fail = g_wifi_fail_reason;
+    if(fail != 0u)
+    {
+        switch(fail)
+        {
+            case 1u:
+                OLED_ShowString(0, 0, "NET:ERR AT RST  ", 16);
+                break;
+            case 2u:
+                err = g_wifi_err;
+                if(err > 9u) err = 9u;
+                sprintf(line, "NET:ERR WiFi e%u ", (unsigned)err);
+                line[16] = '\0';
+                OLED_ShowString(0, 0, line, 16);
+                break;
+            case 3u:
+                OLED_ShowString(0, 0, "NET:ERR MQTT    ", 16);
+                break;
+            default:
+                OLED_ShowString(0, 0, "NET:ERR ?       ", 16);
+                break;
+        }
+        return;
+    }
+
+    stage = g_net_stage;
+    sub   = g_wifi_substage;
+    err   = g_wifi_err;
+    if(sub > 99u) sub = 99u;  /* 210(CWLAP) 等超出 2 位时截断，保持行宽固定 */
+    if(err > 9u)  err = 9u;
+
+    sprintf(line, "NET:%s S%02u E%u ", net_stage_name(stage), (unsigned)sub, (unsigned)err);
+    line[16] = '\0';
+    OLED_ShowString(0, 0, line, 16);
 }
 
 void OLED_View_RefreshDashboard(const sensor_state_t *sensor, const lock_state_t *lock, const esp_state_t *esp)
