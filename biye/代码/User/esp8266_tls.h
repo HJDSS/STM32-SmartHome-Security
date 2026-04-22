@@ -7,6 +7,11 @@
 u8 ESP8266_TLS_Init(void);
 u8 ESP8266_AT_SendWait(char *cmd, char *ack, u16 timeout_ms);
 void ESP8266_RESET(void);
+/* [M1.6] ESP8266 EN/CH_PD(PC9) 引脚初始化：上电后必须最早调用（delay_init 之后，
+ * USART2_Init_Config 之前），把 PC9 配成推挽输出并立即置高，否则引脚停留在
+ * "浮空输入"态，ESP-01S 的 EN 只靠模块自带弱上拉，上电瞬间闪一下就塌陷，
+ * MCU 后续 AT 命令全部得不到响应。BOARD_WIFI_USE_NODEMCU=1 时此函数是空操作。*/
+void ESP8266_EN_GPIO_Init(void);
 
 void OneNET_Parse_Cmd(void);
 void OneNET_Publish_Data(u8 temp, u8 humi, u16 gas, u8 door, u8 arm, u8 alarm, u8 led);

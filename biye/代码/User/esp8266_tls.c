@@ -175,6 +175,45 @@ static u8 esp_cwlap_check_ssid(const char *ssid, u8 *ch_out)
 }
 #endif
 
+/* [M1.6] ESP8266 EN/CH_PD(PC9) 引脚初始化 —— 必须在 app_init 极早调用。
+ *
+ * 为什么要单独做这个初始化：
+ *   STM32 上电后所有 GPIO 默认状态是 GPIO_Mode_IN_FLOATING。之前代码只在
+ *   ESP8266_RESET 里对 PC9 调用 GPIO_WriteBit，只会改 ODR 寄存器，输出
+ *   驱动器仍处于关闭状态，PC9 实际上是浮空的。ESP-01S 的 EN 引脚虽然
+ *   模块 PCB 上一般带弱上拉/下拉，但不足以稳定驱动，上电一瞬间 EN 会
+ *   短暂接近高电平（LED 闪一下）后塌陷到阈值以下，整块 ESP 停止工作。
+ *
+ * 本函数做三件事：
+ *   1) 使能 GPIOC 时钟（虽然 BEEP/继电器也在 C 组，但早期调用必须保证
+ *      时钟已开，不依赖后续 Init 的顺序）；
+ *   2) 把 PC9 配为 GPIO_Mode_Out_PP（2MHz 足够，EN 是慢变准静态信号）；
+ *   3) 立即写 Bit_SET，让 EN 在 USART2_Init_Config 之前就被拉高，
+ *      这样 ESP-01S 可以利用 STM32 初始化 UART 的这几百毫秒完成自检。
+ *
+ * 调用时机：main.c app_init() 里紧跟 delay_init() 之后、USART2_Init_Config
+ *         之前。其他地方不得再次把 PC9 重配成输入或写 0。
+ *
+ * BOARD_WIFI_USE_NODEMCU=1（带板载 USB-TTL 的 NodeMCU）时 EN 由板子自管，
+ * 此函数直接跳过，避免 MCU 和板上电路冲突。
+ */
+void ESP8266_EN_GPIO_Init(void)
+{
+#if BOARD_WIFI_USE_NODEMCU
+		return;
+#else
+		GPIO_InitTypeDef gi;
+		RCC_APB2PeriphClockCmd(BOARD_ESP8266_EN_CLK, ENABLE);
+		/* 先把 ODR 置 1，再切到输出，避免切换瞬间输出 0 给 ESP 带来毛刺复位 */
+		GPIO_WriteBit(BOARD_ESP8266_EN_PORT, BOARD_ESP8266_EN_PIN, Bit_SET);
+		gi.GPIO_Pin   = BOARD_ESP8266_EN_PIN;
+		gi.GPIO_Mode  = GPIO_Mode_Out_PP;
+		gi.GPIO_Speed = GPIO_Speed_2MHz;
+		GPIO_Init(BOARD_ESP8266_EN_PORT, &gi);
+		GPIO_WriteBit(BOARD_ESP8266_EN_PORT, BOARD_ESP8266_EN_PIN, Bit_SET);
+#endif
+}
+
 /* ESP8266 EN/CH_PD 硬件复位：按 BOARD_ESP8266_EN_* 引脚拉低 100ms 后拉高 300ms */
 void ESP8266_RESET(void)
 {

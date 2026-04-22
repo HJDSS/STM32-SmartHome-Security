@@ -118,6 +118,13 @@ static void app_init(void)
 {
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
     delay_init();
+
+    /* [M1.6] 先把 ESP8266 EN(PC9) 配成推挽输出并置高，给 ESP-01S 一个稳定的
+     * "enable" 电平。必须在 USART2_Init_Config 之前完成，否则 ESP 还没真正
+     * 启动 UART，后续所有 AT 命令都会超时；现象就是 ESP 模块灯闪一下即熄。
+     * 详见 esp8266_tls.c:ESP8266_EN_GPIO_Init() 注释。*/
+    ESP8266_EN_GPIO_Init();
+
     uart1_Init(115200);
     USART2_Init_Config(BOARD_WIFI_UART_BAUD);
 
