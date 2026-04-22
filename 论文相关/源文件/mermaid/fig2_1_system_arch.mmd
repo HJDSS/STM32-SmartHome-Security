@@ -1,0 +1,8 @@
+flowchart TB
+  A["应用层<br/>OneNET平台 / MQTT客户端"] --> B["通信层<br/>WiFi + MQTT"]
+  B --> C["控制层<br/>STM32F103RCT6"]
+  C --> D["感知层<br/>AS608 / PIR / DHT / MQ-2 / OV7670"]
+  C --> E["执行层<br/>门锁继电器 / 燃气阀 / 蜂鸣器"]
+  C --> F["存储层<br/>SD卡日志与图像缓存"]
+  D --> C
+  C --> E

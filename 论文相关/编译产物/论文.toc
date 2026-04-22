@@ -1,0 +1,90 @@
+\contentsline {chapter}{\numberline {第一章\hspace {.3em}}绪论}{1}{chapter.1}%
+\contentsline {section}{\numberline {1.1}研究背景与意义}{1}{section.1.1}%
+\contentsline {section}{\numberline {1.2}国内外研究现状}{1}{section.1.2}%
+\contentsline {section}{\numberline {1.3}研究目标与主要内容}{2}{section.1.3}%
+\contentsline {section}{\numberline {1.4}论文结构安排}{2}{section.1.4}%
+\contentsline {chapter}{\numberline {第二章\hspace {.3em}}系统总体方案设计}{3}{chapter.2}%
+\contentsline {section}{\numberline {2.1}系统需求分析}{3}{section.2.1}%
+\contentsline {subsection}{\numberline {2.1.1}功能需求}{3}{subsection.2.1.1}%
+\contentsline {subsection}{\numberline {2.1.2}性能需求}{3}{subsection.2.1.2}%
+\contentsline {subsection}{\numberline {2.1.3}工程约束}{3}{subsection.2.1.3}%
+\contentsline {section}{\numberline {2.2}系统总体架构（四层架构）}{4}{section.2.2}%
+\contentsline {section}{\numberline {2.3}单芯片控制架构设计}{4}{section.2.3}%
+\contentsline {subsection}{\numberline {2.3.1}功能分工}{4}{subsection.2.3.1}%
+\contentsline {subsection}{\numberline {2.3.2}资源分配}{4}{subsection.2.3.2}%
+\contentsline {section}{\numberline {2.4}系统工作流程}{4}{section.2.4}%
+\contentsline {subsection}{\numberline {2.4.1}上电启动流程}{4}{subsection.2.4.1}%
+\contentsline {subsection}{\numberline {2.4.2}居家/布防/应急流程}{5}{subsection.2.4.2}%
+\contentsline {section}{\numberline {2.5}关键技术选型}{5}{section.2.5}%
+\contentsline {subsection}{\numberline {2.5.1}控制器：STM32F103RCT6}{5}{subsection.2.5.1}%
+\contentsline {subsection}{\numberline {2.5.2}系统：FreeRTOS}{5}{subsection.2.5.2}%
+\contentsline {subsection}{\numberline {2.5.3}通信：MQTT}{5}{subsection.2.5.3}%
+\contentsline {subsection}{\numberline {2.5.4}加密：AES-128、TLS}{6}{subsection.2.5.4}%
+\contentsline {section}{\numberline {2.6}论文插图、表格与公式}{6}{section.2.6}%
+\contentsline {chapter}{\numberline {第三章\hspace {.3em}}系统硬件设计}{9}{chapter.3}%
+\contentsline {section}{\numberline {3.1}硬件总体设计}{9}{section.3.1}%
+\contentsline {section}{\numberline {3.2}主控最小系统设计}{9}{section.3.2}%
+\contentsline {section}{\numberline {3.3}感知层模块设计}{10}{section.3.3}%
+\contentsline {subsection}{\numberline {3.3.1}AS608指纹模块}{10}{subsection.3.3.1}%
+\contentsline {subsection}{\numberline {3.3.2}HC-SR501人体红外}{10}{subsection.3.3.2}%
+\contentsline {subsection}{\numberline {3.3.3}DHT11/22温湿度}{11}{subsection.3.3.3}%
+\contentsline {subsection}{\numberline {3.3.4}MQ-2烟雾}{11}{subsection.3.3.4}%
+\contentsline {subsection}{\numberline {3.3.5}OV7670摄像头+FIFO}{11}{subsection.3.3.5}%
+\contentsline {section}{\numberline {3.4}执行层驱动设计}{11}{section.3.4}%
+\contentsline {subsection}{\numberline {3.4.1}继电器（门锁/燃气）}{11}{subsection.3.4.1}%
+\contentsline {subsection}{\numberline {3.4.2}蜂鸣器报警}{12}{subsection.3.4.2}%
+\contentsline {section}{\numberline {3.5}板内接口与串口通信设计}{12}{section.3.5}%
+\contentsline {section}{\numberline {3.6}电源管理系统设计}{12}{section.3.6}%
+\contentsline {section}{\numberline {3.7}硬件调试}{12}{section.3.7}%
+\contentsline {chapter}{\numberline {第四章\hspace {.3em}}系统软件设计}{13}{chapter.4}%
+\contentsline {section}{\numberline {4.1}软件开发环境}{13}{section.4.1}%
+\contentsline {section}{\numberline {4.2}软件架构（裸机/FreeRTOS双模式）}{13}{section.4.2}%
+\contentsline {section}{\numberline {4.3}裸机轮询与中断路径}{13}{section.4.3}%
+\contentsline {section}{\numberline {4.4}底层驱动开发}{14}{section.4.4}%
+\contentsline {section}{\numberline {4.5}核心控制逻辑}{14}{section.4.5}%
+\contentsline {subsection}{\numberline {4.5.1}门禁验证逻辑}{14}{subsection.4.5.1}%
+\contentsline {subsection}{\numberline {4.5.2}安防报警逻辑}{14}{subsection.4.5.2}%
+\contentsline {subsection}{\numberline {4.5.3}环境监测与联动}{15}{subsection.4.5.3}%
+\contentsline {subsection}{\numberline {4.5.4}场景联动逻辑}{15}{subsection.4.5.4}%
+\contentsline {section}{\numberline {4.6}串口与MQTT数据协议设计}{15}{section.4.6}%
+\contentsline {subsection}{\numberline {4.6.1}帧格式}{15}{subsection.4.6.1}%
+\contentsline {subsection}{\numberline {4.6.2}指令集}{15}{subsection.4.6.2}%
+\contentsline {subsection}{\numberline {4.6.3}校验与容错}{16}{subsection.4.6.3}%
+\contentsline {section}{\numberline {4.7}网络与安全机制}{16}{section.4.7}%
+\contentsline {subsection}{\numberline {4.7.1}WiFi + MQTT}{16}{subsection.4.7.1}%
+\contentsline {subsection}{\numberline {4.7.2}AES-128加密存储}{17}{subsection.4.7.2}%
+\contentsline {subsection}{\numberline {4.7.3}TLS传输加密}{17}{subsection.4.7.3}%
+\contentsline {chapter}{\numberline {第五章\hspace {.3em}}移动端交互设计}{19}{chapter.5}%
+\contentsline {section}{\numberline {5.1}移动端需求分析}{19}{section.5.1}%
+\contentsline {section}{\numberline {5.2}移动端总体架构}{19}{section.5.2}%
+\contentsline {section}{\numberline {5.3}UI界面设计}{19}{section.5.3}%
+\contentsline {section}{\numberline {5.4}通信模块（MQTT）}{19}{section.5.4}%
+\contentsline {section}{\numberline {5.5}核心功能实现}{19}{section.5.5}%
+\contentsline {subsection}{\numberline {5.5.1}远程控制}{20}{subsection.5.5.1}%
+\contentsline {subsection}{\numberline {5.5.2}状态监控}{20}{subsection.5.5.2}%
+\contentsline {subsection}{\numberline {5.5.3}报警推送}{20}{subsection.5.5.3}%
+\contentsline {subsection}{\numberline {5.5.4}历史查询}{20}{subsection.5.5.4}%
+\contentsline {chapter}{\numberline {第六章\hspace {.3em}}系统测试与结果分析}{21}{chapter.6}%
+\contentsline {section}{\numberline {6.1}测试环境与方案}{21}{section.6.1}%
+\contentsline {section}{\numberline {6.2}单元功能测试}{21}{section.6.2}%
+\contentsline {section}{\numberline {6.3}系统联动测试}{22}{section.6.3}%
+\contentsline {subsection}{\numberline {6.3.1}门禁联动}{22}{subsection.6.3.1}%
+\contentsline {subsection}{\numberline {6.3.2}入侵报警}{22}{subsection.6.3.2}%
+\contentsline {subsection}{\numberline {6.3.3}燃气应急}{22}{subsection.6.3.3}%
+\contentsline {subsection}{\numberline {6.3.4}远程控制}{22}{subsection.6.3.4}%
+\contentsline {section}{\numberline {6.4}性能指标测试}{23}{section.6.4}%
+\contentsline {subsection}{\numberline {6.4.1}准确率、误报率}{23}{subsection.6.4.1}%
+\contentsline {subsection}{\numberline {6.4.2}响应延迟}{23}{subsection.6.4.2}%
+\contentsline {subsection}{\numberline {6.4.3}功耗}{23}{subsection.6.4.3}%
+\contentsline {subsection}{\numberline {6.4.4}图像传输}{23}{subsection.6.4.4}%
+\contentsline {section}{\numberline {6.5}稳定性测试}{24}{section.6.5}%
+\contentsline {section}{\numberline {6.6}测试结论与优化}{24}{section.6.6}%
+\contentsline {chapter}{\numberline {第七章\hspace {.3em}}总结与展望}{25}{chapter.7}%
+\contentsline {section}{\numberline {7.1}全文工作总结}{25}{section.7.1}%
+\contentsline {section}{\numberline {7.2}创新点与优势}{25}{section.7.2}%
+\contentsline {section}{\numberline {7.3}不足与改进方向}{25}{section.7.3}%
+\contentsline {section}{\numberline {7.4}未来展望}{25}{section.7.4}%
+\contentsline {chapter}{\numberline {附录 A\hspace {.3em}}附录（原理图、核心代码、实物图）}{31}{appendix.A}%
+\contentsline {section}{\numberline {A.1}系统原理图}{31}{section.A.1}%
+\contentsline {section}{\numberline {A.2}核心代码}{31}{section.A.2}%
+\contentsline {section}{\numberline {A.3}实物图}{31}{section.A.3}%

@@ -1,0 +1,6 @@
+flowchart LR
+  MCU["STM32F103RCT6"] --- AS["AS608<br/>USART1"]
+  MCU --- PIR["HC-SR501<br/>GPIO/EXTI"]
+  MCU --- DHT["DHT11/22<br/>单总线"]
+  MCU --- MQ2["MQ-2<br/>ADC"]
+  MCU --- CAM["OV7670+FIFO<br/>并口"]

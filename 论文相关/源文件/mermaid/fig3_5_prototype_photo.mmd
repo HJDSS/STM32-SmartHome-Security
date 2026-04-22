@@ -1,0 +1,10 @@
+flowchart TB
+  subgraph DEV["系统实物部署示意"]
+    B1["主控板<br/>STM32核心板"]
+    B2["传感区域<br/>PIR / DHT / MQ-2"]
+    B3["执行区域<br/>继电器 / 蜂鸣器"]
+    B4["通信与存储<br/>ESP8266 / SD卡"]
+  end
+  B1 --- B2
+  B1 --- B3
+  B1 --- B4

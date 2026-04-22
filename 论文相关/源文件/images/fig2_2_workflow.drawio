@@ -1,0 +1,102 @@
+<mxfile host="65bd71144e">
+    <diagram id="fig2_2_workflow" name="Page-1">
+        <mxGraphModel dx="502" dy="1349" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="t1" value="系统工作流程" style="text;html=1;align=center;verticalAlign=middle;fontSize=18;fontStyle=1;fontFamily=SimSun;" parent="1" vertex="1">
+                    <mxGeometry x="284" y="40" width="260" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="n1" value="上电启动" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#2D5B9E;fillColor=#EEF4FF;fontFamily=SimSun;fontSize=14;" parent="1" vertex="1">
+                    <mxGeometry x="274" y="100" width="280" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="n2" value="硬件初始化" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#2D5B9E;fillColor=#EEF4FF;fontFamily=SimSun;fontSize=14;" parent="1" vertex="1">
+                    <mxGeometry x="274" y="190" width="280" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="d1" value="运行模式选择&#10;（居家 / 布防 / 应急）" style="rhombus;whiteSpace=wrap;html=1;strokeColor=#C67C2F;fillColor=#FFF3E8;fontFamily=SimSun;fontSize=13;" parent="1" vertex="1">
+                    <mxGeometry x="274" y="285" width="280" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="n3" value="多源数据采集&#10;（指纹 / PIR / DHT / MQ-2 / 摄像头）" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#2D5B9E;fillColor=#EEF4FF;fontFamily=SimSun;fontSize=13;" parent="1" vertex="1">
+                    <mxGeometry x="234" y="405" width="360" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="d2" value="事件判定&#10;（正常 / 异常）" style="rhombus;whiteSpace=wrap;html=1;strokeColor=#C67C2F;fillColor=#FFF3E8;fontFamily=SimSun;fontSize=13;" parent="1" vertex="1">
+                    <mxGeometry x="284" y="505" width="260" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="l1" value="状态上报" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#5E87C2;fillColor=#F7FAFF;fontFamily=SimSun;fontSize=13;" parent="1" vertex="1">
+                    <mxGeometry x="70" y="625" width="220" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="l2" value="循环监测" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#5E87C2;fillColor=#F7FAFF;fontFamily=SimSun;fontSize=13;" parent="1" vertex="1">
+                    <mxGeometry x="70" y="705" width="220" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="r1" value="联动执行&#10;（门锁 / 蜂鸣器 / 燃气阀）" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#5E87C2;fillColor=#F7FAFF;fontFamily=SimSun;fontSize=13;" parent="1" vertex="1">
+                    <mxGeometry x="545" y="615" width="240" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="r2" value="告警推送" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#5E87C2;fillColor=#F7FAFF;fontFamily=SimSun;fontSize=13;" parent="1" vertex="1">
+                    <mxGeometry x="545" y="695" width="240" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="r3" value="日志记录" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#5E87C2;fillColor=#F7FAFF;fontFamily=SimSun;fontSize=13;" parent="1" vertex="1">
+                    <mxGeometry x="545" y="770" width="240" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="r4" value="状态上报" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#5E87C2;fillColor=#F7FAFF;fontFamily=SimSun;fontSize=13;" parent="1" vertex="1">
+                    <mxGeometry x="545" y="845" width="240" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="r5" value="循环监测" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#5E87C2;fillColor=#F7FAFF;fontFamily=SimSun;fontSize=13;" parent="1" vertex="1">
+                    <mxGeometry x="545" y="920" width="240" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="e12" style="endArrow=block;html=1;strokeColor=#334E68;strokeWidth=2;" parent="1" source="n1" target="n2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e23" style="endArrow=block;html=1;strokeColor=#334E68;strokeWidth=2;" parent="1" source="n2" target="d1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e34" style="endArrow=block;html=1;strokeColor=#334E68;strokeWidth=2;" parent="1" source="d1" target="n3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e45" style="endArrow=block;html=1;strokeColor=#334E68;strokeWidth=2;" parent="1" source="n3" target="d2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_norm" value="正常" style="endArrow=block;html=1;strokeColor=#334E68;strokeWidth=2;labelBackgroundColor=#FFFFFF;fontFamily=SimSun;fontSize=12;" parent="1" source="d2" target="l1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_norm2" style="endArrow=block;html=1;strokeColor=#334E68;strokeWidth=2;" parent="1" source="l1" target="l2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_abn" value="异常" style="endArrow=block;html=1;strokeColor=#334E68;strokeWidth=2;labelBackgroundColor=#FFFFFF;fontFamily=SimSun;fontSize=12;" parent="1" source="d2" target="r1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_abn2" style="endArrow=block;html=1;strokeColor=#334E68;strokeWidth=2;" parent="1" source="r1" target="r2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_abn3" style="endArrow=block;html=1;strokeColor=#334E68;strokeWidth=2;" parent="1" source="r2" target="r3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_abn4" style="endArrow=block;html=1;strokeColor=#334E68;strokeWidth=2;" parent="1" source="r3" target="r4" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_abn5" style="endArrow=block;html=1;strokeColor=#334E68;strokeWidth=2;" parent="1" source="r4" target="r5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_loop1" value="继续监测" style="endArrow=block;html=1;strokeColor=#334E68;strokeWidth=2;curved=1;labelBackgroundColor=#FFFFFF;fontFamily=SimSun;fontSize=12;" parent="1" source="l2" target="d1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="170" y="820"/>
+                            <mxPoint x="10" y="790"/>
+                            <mxPoint x="40" y="330"/>
+                            <mxPoint x="240" y="330"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_loop2" value="恢复监测" style="endArrow=block;html=1;strokeColor=#334E68;strokeWidth=2;curved=1;labelBackgroundColor=#FFFFFF;fontFamily=SimSun;fontSize=12;" parent="1" source="r5" target="d1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="665" y="1030"/>
+                            <mxPoint x="820" y="1020"/>
+                            <mxPoint x="820" y="680"/>
+                            <mxPoint x="785" y="330"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

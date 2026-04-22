@@ -1,0 +1,20 @@
+flowchart TB
+  A["应用交互层<br/>OneNET平台 / MQTT客户端"] --> B["通信服务层<br/>ESP8266驱动 / MQTT会话维护"]
+  B --> C["任务调度层<br/>FreeRTOS调度器 / 事件队列"]
+  C --> D["控制逻辑层<br/>门禁认证 / 安防告警 / 环境联动"]
+  D --> E["驱动抽象层<br/>GPIO / UART / ADC / 定时器 / 中断"]
+  E --> F["硬件设备层<br/>传感器 / 执行器 / 摄像头 / SD"]
+
+  subgraph T["关键任务组（Task）"]
+    T1["Task_Security_Alarm"]:::task
+    T2["Task_Wifi_MQTT"]:::task
+    T3["Task_Fingerprint"]:::task
+    T4["Task_Sensor"]:::task
+    T5["Task_Capture"]:::task
+    T6["Task_SystemMonitor"]:::task
+  end
+
+  C -.调度.-> T
+  T -.事件驱动.-> D
+
+  classDef task fill:#EEF3FB,stroke:#1D4E89,color:#1E293B;

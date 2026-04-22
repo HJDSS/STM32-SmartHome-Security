@@ -1,0 +1,33 @@
+%% 图4.3 系统功能流程（Mermaid优化版）
+%%{init: {"theme":"base","themeVariables":{"fontSize":"20px","fontFamily":"Microsoft YaHei, SimSun, sans-serif","lineColor":"#334E68","primaryColor":"#EEF4FF","primaryBorderColor":"#2D5B9E"}}}%%
+flowchart TD
+  classDef core fill:#EEF4FF,stroke:#2D5B9E,stroke-width:1.6px,color:#1F2D3D;
+  classDef action fill:#F7FAFF,stroke:#5E87C2,stroke-width:1.3px,color:#1F2D3D;
+  classDef decision fill:#FFF3E8,stroke:#C67C2F,stroke-width:1.6px,color:#1F2D3D;
+
+  S["系统启动与模式加载"]:::core
+  C["多源数据采集<br/>（指纹 / PIR / DHT / MQ-2）"]:::core
+  D{"触发条件判断<br/>（门禁 / 入侵 / 气体异常）"}:::decision
+
+  A1["门禁流程<br/>身份验证与开锁控制"]:::action
+  A2["安防流程<br/>告警触发与联动执行"]:::action
+  A3["本地执行<br/>蜂鸣器 / 继电器 / 燃气阀"]:::action
+  A4["远程协同<br/>MQTT上报与命令接收"]:::action
+
+  R{"状态是否恢复"}:::decision
+  L["日志记录与事件存档"]:::action
+  U["策略更新与参数调整"]:::action
+  B["返回循环监测"]:::core
+
+  S --> C --> D
+  D -- 门禁事件 --> A1
+  D -- 安防/应急事件 --> A2
+  A1 --> A3
+  A2 --> A4
+  A3 --> R
+  A4 --> R
+  R -- 否 --> L
+  R -- 是 --> U
+  L --> B
+  U --> B
+  B -. 持续运行 .-> C

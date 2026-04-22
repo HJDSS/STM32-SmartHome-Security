@@ -1,0 +1,28 @@
+%% 图4.2 门禁与安防核心状态机（Mermaid优化版）
+%%{init: {"theme":"base","themeVariables":{"fontSize":"20px","fontFamily":"Microsoft YaHei, SimSun, sans-serif","lineColor":"#334E68","primaryColor":"#EEF4FF","primaryBorderColor":"#2D5B9E"}}}%%
+flowchart LR
+  classDef core fill:#EEF4FF,stroke:#2D5B9E,stroke-width:1.6px,color:#1F2D3D;
+  classDef alarm fill:#FFF3E8,stroke:#C67C2F,stroke-width:1.6px,color:#1F2D3D;
+  classDef idle fill:#F7FAFF,stroke:#5E87C2,stroke-width:1.3px,color:#1F2D3D;
+
+  I["空闲监测"]:::idle
+  A["身份验证"]:::core
+  D["布防监测"]:::core
+  R["远程协同控制"]:::idle
+  T["告警触发"]:::alarm
+  E["应急处置"]:::alarm
+  S["恢复待机"]:::core
+
+  I -- "指纹触发" --> A
+  A -- "验证通过" --> I
+  A -- "验证失败/撤防" --> D
+  D -- "PIR触发" --> T
+  D -- "气体超阈值" --> E
+
+  R -- "下发命令" --> T
+  E -- "升级告警" --> T
+  T -- "用户解除" --> S
+  S -- "状态复位" --> I
+
+  I -. "云端在线" .-> R
+  D -. "断网重连后同步" .-> R

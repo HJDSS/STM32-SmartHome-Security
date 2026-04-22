@@ -1,0 +1,26 @@
+%% 图6.4 72h稳定性测试流程图（Mermaid优化版）
+%%{init: {"theme":"base","themeVariables":{"fontSize":"20px","fontFamily":"Microsoft YaHei, SimSun, sans-serif","lineColor":"#334E68","primaryColor":"#EEF4FF","primaryBorderColor":"#2D5B9E"}}}%%
+flowchart TD
+  classDef core fill:#EEF4FF,stroke:#2D5B9E,stroke-width:1.6px,color:#1F2D3D;
+  classDef action fill:#F7FAFF,stroke:#5E87C2,stroke-width:1.3px,color:#1F2D3D;
+  classDef decision fill:#FFF3E8,stroke:#C67C2F,stroke-width:1.6px,color:#1F2D3D;
+  classDef result fill:#EAF8EA,stroke:#4E9A57,stroke-width:1.3px,color:#1F2D3D;
+
+  P0["测试准备与参数初始化"]:::core
+  P1["启动72h连续运行"]:::core
+  P2["周期采样状态与日志"]:::core
+  Q1{"检测异常事件？"}:::decision
+
+  N1["记录常规数据<br/>（温湿度 / 告警 / 通信）"]:::action
+  Y1["触发异常复测与归因"]:::action
+
+  Q2{"72h是否结束？"}:::decision
+  N2["继续运行并采样"]:::action
+  Y2["统计重启/阻塞/丢包"]:::action
+  OUT["输出稳定性评估结论"]:::result
+
+  P0 --> P1 --> P2 --> Q1
+  Q1 -- 否 --> N1 --> Q2
+  Q1 -- 是 --> Y1 --> Q2
+  Q2 -- 否 --> N2 --> P2
+  Q2 -- 是 --> Y2 --> OUT

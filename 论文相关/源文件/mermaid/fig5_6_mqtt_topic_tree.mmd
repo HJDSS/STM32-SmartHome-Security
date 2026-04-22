@@ -1,0 +1,26 @@
+flowchart TB
+  S["OneNET / MQTT Broker"]
+
+  subgraph U["上行主题（设备 -> 平台）"]
+    U1["home/device/status<br/>温湿度/门禁/模式状态"]
+    U2["home/device/alarm<br/>入侵/烟雾/异常事件"]
+    U3["home/device/ack<br/>控制执行结果反馈"]
+  end
+
+  subgraph D["下行主题（平台 -> 设备）"]
+    D1["home/device/cmd/lock<br/>开锁/关锁"]
+    D2["home/device/cmd/arm<br/>布防/撤防"]
+    D3["home/device/cmd/reset<br/>复位/参数更新"]
+  end
+
+  APP["移动端客户端"] -->|"Publish 控制命令"| S
+  S -->|"Subscribe 下行主题"| MCU["STM32 + ESP8266 设备端"]
+  MCU -->|"Publish 状态与告警"| S
+  S -->|"Subscribe 上行主题"| APP
+
+  D1 --> D
+  D2 --> D
+  D3 --> D
+  U1 --> U
+  U2 --> U
+  U3 --> U

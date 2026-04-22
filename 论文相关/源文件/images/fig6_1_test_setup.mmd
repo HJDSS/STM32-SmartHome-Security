@@ -1,0 +1,16 @@
+%% 图6.1 系统测试环境与连接关系示意（Mermaid优化版）
+flowchart LR
+  classDef core fill:#EEF4FF,stroke:#2D5B9E,stroke-width:1.6px,color:#1F2D3D;
+  classDef node fill:#F7FAFF,stroke:#5E87C2,stroke-width:1.3px,color:#1F2D3D;
+
+  DUT["被测设备<br/>STM32主控板"]:::core
+  AP["路由器 / 热点"]:::node
+  CLOUD["OneNET<br/>MQTT云平台"]:::core
+  PC["PC/串口调试<br/>与数据记录"]:::node
+  APP["移动端App<br/>远程控制"]:::node
+
+  DUT -- "Wi-Fi" --> AP
+  AP -- "MQTT/TLS" --> CLOUD
+  DUT -- "UART/USB" --> PC
+  CLOUD -- "告警推送 / 控制同步" --> APP
+  APP -- "远程指令" --> CLOUD

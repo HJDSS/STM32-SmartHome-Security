@@ -1,0 +1,14 @@
+﻿sequenceDiagram
+    participant S as STM32主控
+    participant E as ESP8266
+    participant C as MQTT云平台
+    participant M as 移动端
+    S->>E: 设备状态采集/串口JSON封装
+    E->>C: MQTT发布(状态上报)
+    C->>M: 云端转发与页面展示
+    M->>C: 用户下发控制命令
+    C->>E: 云端下发控制主题
+    E->>S: 串口转发控制命令
+    S->>E: 执行联动并回传结果
+    E->>C: 结果上报
+    C->>M: 状态同步完成

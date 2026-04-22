@@ -1,0 +1,6 @@
+flowchart TB
+  V["3.3V稳压电源"] --> MCU["STM32F103RCT6"]
+  CLK["8MHz晶振 + PLL"] --> MCU
+  RST["复位电路"] --> MCU
+  SWD["SWD下载调试接口"] --> MCU
+  IO["GPIO / USART / ADC / SPI"] --> MCU

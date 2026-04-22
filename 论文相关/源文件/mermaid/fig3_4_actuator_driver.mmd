@@ -1,0 +1,5 @@
+flowchart LR
+  MCU["STM32 GPIO"] --> DRV["驱动级<br/>三极管/隔离"]
+  DRV --> RL1["门锁继电器"]
+  DRV --> RL2["燃气阀继电器"]
+  MCU --> BZ["有源蜂鸣器"]

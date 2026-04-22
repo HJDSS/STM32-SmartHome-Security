@@ -1,0 +1,23 @@
+%% 串口与外设数据流向图（Mermaid）
+flowchart LR
+  classDef box fill:#EEF4FF,stroke:#2D5B9E,stroke-width:1.5px,color:#1F2D3D;
+  classDef sub fill:#F7FAFF,stroke:#5E87C2,stroke-width:1.2px,color:#1F2D3D;
+
+  A["AS608/调试串口\n(USART1)"]
+  S["传感器组\nPIR / DHT / MQ-2"]
+  M["STM32 主控"]
+  X["执行器组\n继电器 / 蜂鸣器"]
+  E["ESP8266 联网\n(USART3)"]
+  C["MQTT 云平台"]
+  P["移动端客户端"]
+
+  class M,C box;
+  class A,S,X,E,P sub;
+
+  A -- "身份数据 / 调试命令" --> M
+  S -- "采样数据" --> M
+  M -- "本地联动控制" --> X
+  M -- "状态上报 / 控制命令" --> E
+  E -- "MQTT 发布 / 订阅" --> C
+  C -- "消息转发" --> P
+  P -- "远程指令" --> C

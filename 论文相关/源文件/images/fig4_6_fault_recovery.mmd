@@ -1,0 +1,27 @@
+%% 图4.6 异常处理与恢复流程图（Mermaid优化版）
+%%{init: {"theme":"base","themeVariables":{"fontSize":"20px","fontFamily":"Microsoft YaHei, SimSun, sans-serif","lineColor":"#334E68","primaryColor":"#EEF4FF","primaryBorderColor":"#2D5B9E"}}}%%
+flowchart TD
+  classDef core fill:#EEF4FF,stroke:#2D5B9E,stroke-width:1.6px,color:#1F2D3D;
+  classDef action fill:#F7FAFF,stroke:#5E87C2,stroke-width:1.3px,color:#1F2D3D;
+  classDef decision fill:#FFF3E8,stroke:#C67C2F,stroke-width:1.6px,color:#1F2D3D;
+  classDef recover fill:#EAF8EA,stroke:#4E9A57,stroke-width:1.3px,color:#1F2D3D;
+
+  RUN["系统运行中"]:::core
+  Q1{"检测到异常？"}:::decision
+  NORM["继续常规监测"]:::action
+
+  CLASS["异常分类<br/>（通信 / 传感 / 执行）"]:::action
+  DEG["触发降级策略"]:::action
+  LOG["记录日志并上报"]:::action
+
+  Q2{"恢复条件满足？"}:::decision
+  RETRY["维持降级并重试"]:::action
+  REC["恢复正常模式"]:::recover
+  LOOP["返回循环监测"]:::core
+
+  RUN --> Q1
+  Q1 -- 否 --> NORM --> LOOP
+
+  Q1 -- 是 --> CLASS --> DEG --> LOG --> Q2
+  Q2 -- 否 --> RETRY --> LOG
+  Q2 -- 是 --> REC --> LOOP
