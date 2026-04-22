@@ -148,32 +148,56 @@ static void app_poll_sensors(void)
 {
     static u32 s_dht_ms = 0;
     static u32 s_mq2_ms = 0;
-    static u32 s_pir_quiet_until = 0;
+    static u32 s_pir_quiet_until = 0u;
     static u8 s_dht_was_ok = 1u;
+    static u8 s_dht_fail_streak = 0u;
+    static u8 s_dht_ok_streak = 0u;
+    static u32 s_dht_backoff_ms = APP_DHT_POLL_MS;
     static u8 s_mq2_was_alarm = 0u;
+    static u16 s_mq2_last_adc = 0u;
+    static u8 s_mq2_stuck_cnt = 0u;
+    static u8 s_mq2_recover_cnt = 0u;
+    static u8 s_mq2_fault = 0u;
     u32 now = Bare_GetTickMs();
 
-    if((u32)(now - s_dht_ms) >= (u32)APP_DHT_POLL_MS)
+    if((u32)(now - s_dht_ms) >= s_dht_backoff_ms)
     {
         u8 t = 0, h = 0;
         s_dht_ms = now;
         if(DHT11_Read_Data(&t, &h) == 0)
         {
+            s_dht_fail_streak = 0u;
+            if(s_dht_ok_streak < 0xFFu) s_dht_ok_streak++;
             dht11_temp = t;
             dht11_humi = h;
             dht11_data_valid = 1u;
             g_sensor.temp = t;
             g_sensor.humi = h;
-            g_sensor.dht_ok = 1u;
+            if(s_dht_ok_streak >= APP_DHT_RECOVER_SUCCESSES)
+            {
+                g_sensor.dht_ok = 1u;
+                s_dht_backoff_ms = APP_DHT_POLL_MS;
+            }
         }
         else
         {
+            s_dht_ok_streak = 0u;
+            if(s_dht_fail_streak < 0xFFu) s_dht_fail_streak++;
             dht11_data_valid = 0u;
-            g_sensor.dht_ok = 0u;
-            if(s_dht_was_ok)
+            if(s_dht_fail_streak >= APP_DHT_OFFLINE_FAILS)
             {
-                LOG_SENSOR("DHT offline");
-                SysLog_Add(LOG_EVT_ALARM, "DHT_OFFLINE");
+                g_sensor.dht_ok = 0u;
+                if(s_dht_was_ok)
+                {
+                    LOG_SENSOR("DHT offline");
+                    SysLog_Add(LOG_EVT_ALARM, "DHT_OFFLINE");
+                }
+                if(s_dht_backoff_ms < APP_DHT_RETRY_BACKOFF_MAX_MS)
+                {
+                    s_dht_backoff_ms <<= 1;
+                    if(s_dht_backoff_ms > APP_DHT_RETRY_BACKOFF_MAX_MS)
+                        s_dht_backoff_ms = APP_DHT_RETRY_BACKOFF_MAX_MS;
+                }
             }
         }
         if(g_sensor.dht_ok && !s_dht_was_ok)
@@ -189,7 +213,45 @@ static void app_poll_sensors(void)
         s_mq2_ms = now;
         mq2_adc_value = MQ2_Read_ADC_Filter();
         g_sensor.mq2_adc = mq2_adc_value;
-        g_sensor.mq2_alarm = MQ2_Check_Alarm(mq2_adc_value);
+        if(mq2_adc_value > 4095u)
+        {
+            s_mq2_fault = 1u;
+        }
+        else
+        {
+            u16 diff = (mq2_adc_value > s_mq2_last_adc) ? (mq2_adc_value - s_mq2_last_adc) : (s_mq2_last_adc - mq2_adc_value);
+            if(diff <= APP_MQ2_STUCK_DIFF_ADC)
+            {
+                if(s_mq2_stuck_cnt < 0xFFu) s_mq2_stuck_cnt++;
+            }
+            else
+            {
+                s_mq2_stuck_cnt = 0u;
+                if(s_mq2_fault)
+                {
+                    if(s_mq2_recover_cnt < 0xFFu) s_mq2_recover_cnt++;
+                    if(s_mq2_recover_cnt >= APP_MQ2_RECOVER_GOOD_COUNT)
+                    {
+                        s_mq2_fault = 0u;
+                        s_mq2_recover_cnt = 0u;
+                        SysLog_Add(LOG_EVT_CONFIG, "MQ2_RECOVER");
+                        LOG_SENSOR("MQ2 recover");
+                    }
+                }
+            }
+            if(s_mq2_stuck_cnt >= APP_MQ2_STUCK_COUNT)
+            {
+                if(!s_mq2_fault)
+                {
+                    SysLog_Add(LOG_EVT_ALARM, "MQ2_FAULT");
+                    LOG_SENSOR("MQ2 fault");
+                }
+                s_mq2_fault = 1u;
+                s_mq2_recover_cnt = 0u;
+            }
+        }
+        s_mq2_last_adc = mq2_adc_value;
+        g_sensor.mq2_alarm = s_mq2_fault ? 0u : MQ2_Check_Alarm(mq2_adc_value);
         if(g_sensor.mq2_alarm && !s_mq2_was_alarm)
         {
             LOG_SENSOR("MQ2 alarm on");
@@ -208,8 +270,10 @@ static void app_poll_sensors(void)
         {
             g_false_alarm_count++;
             SysLog_Add(LOG_EVT_CONFIG, "PIR_FALSE_ALARM");
+            s_pir_quiet_until = now + (u32)APP_PIR_SUPPRESS_MS;
+            LOG_SENSOR("PIR suppress");
         }
-        if((u32)(now - s_pir_quiet_until) < 3000000000u)
+        if((s32)(now - s_pir_quiet_until) >= 0)
         {
             g_sensor.pir_alarm = 1u;
         }
