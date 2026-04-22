@@ -20,6 +20,8 @@
 #include "esp8266_tls.h"
 #include "syslog.h"
 #include "app_types.h"
+#include "app_params.h"
+#include "log.h"
 
 #define BUF2_MAX 800
 #define BUF3_MAX 400
@@ -151,7 +153,7 @@ static void app_poll_sensors(void)
     static u8 s_mq2_was_alarm = 0u;
     u32 now = Bare_GetTickMs();
 
-    if((u32)(now - s_dht_ms) >= 2000u)
+    if((u32)(now - s_dht_ms) >= (u32)APP_DHT_POLL_MS)
     {
         u8 t = 0, h = 0;
         s_dht_ms = now;
@@ -170,19 +172,19 @@ static void app_poll_sensors(void)
             g_sensor.dht_ok = 0u;
             if(s_dht_was_ok)
             {
-                uart1_SendStr("[SENSOR] DHT offline\r\n");
+                LOG_SENSOR("DHT offline");
                 SysLog_Add(LOG_EVT_ALARM, "DHT_OFFLINE");
             }
         }
         if(g_sensor.dht_ok && !s_dht_was_ok)
         {
-            uart1_SendStr("[SENSOR] DHT recover\r\n");
+            LOG_SENSOR("DHT recover");
             SysLog_Add(LOG_EVT_CONFIG, "DHT_RECOVER");
         }
         s_dht_was_ok = g_sensor.dht_ok;
     }
 
-    if((u32)(now - s_mq2_ms) >= 250u)
+    if((u32)(now - s_mq2_ms) >= (u32)APP_MQ2_POLL_MS)
     {
         s_mq2_ms = now;
         mq2_adc_value = MQ2_Read_ADC_Filter();
@@ -190,11 +192,11 @@ static void app_poll_sensors(void)
         g_sensor.mq2_alarm = MQ2_Check_Alarm(mq2_adc_value);
         if(g_sensor.mq2_alarm && !s_mq2_was_alarm)
         {
-            uart1_SendStr("[SENSOR] MQ2 alarm on\r\n");
+            LOG_SENSOR("MQ2 alarm on");
         }
         if(!g_sensor.mq2_alarm && s_mq2_was_alarm)
         {
-            uart1_SendStr("[SENSOR] MQ2 alarm clear\r\n");
+            LOG_SENSOR("MQ2 alarm clear");
         }
         s_mq2_was_alarm = g_sensor.mq2_alarm;
     }
@@ -213,7 +215,7 @@ static void app_poll_sensors(void)
         }
         else
         {
-            s_pir_quiet_until = now + 3000u;
+            s_pir_quiet_until = now + (u32)APP_PIR_SUPPRESS_MS;
         }
     }
     else if(!HC_SR501_Poll_Triggered())
@@ -225,19 +227,15 @@ static void app_poll_sensors(void)
 static void app_report_stats(void)
 {
     static u32 s_last_ms = 0u;
-    char line[160];
     u32 now = Bare_GetTickMs();
-    if((u32)(now - s_last_ms) < 30000u) return;
+    if((u32)(now - s_last_ms) < (u32)APP_STAT_REPORT_MS) return;
     s_last_ms = now;
-    sprintf(line,
-            "[STAT] false_alarm=%lu reconnect=%lu replay=%u sd_fail=%u run_ex=%lu",
-            (unsigned long)g_false_alarm_count,
-            (unsigned long)g_net_reconnect_count,
-            (unsigned)g_cap_replay_count,
-            (unsigned)g_cap_sd_write_fail_count,
-            (unsigned long)g_runtime_exception_count);
-    uart1_SendStr(line);
-    uart1_SendStr("\r\n");
+    LOG_STAT("false_alarm=%lu reconnect=%lu replay=%u sd_fail=%u run_ex=%lu",
+             (unsigned long)g_false_alarm_count,
+             (unsigned long)g_net_reconnect_count,
+             (unsigned)g_cap_replay_count,
+             (unsigned)g_cap_sd_write_fail_count,
+             (unsigned long)g_runtime_exception_count);
 }
 
 static void app_poll_alarm_and_act(void)
@@ -280,12 +278,12 @@ static void app_poll_net(void)
     g_esp.hb_ok = ESP8266_Online_Flag ? 1u : 0u;
     if(ESP8266_Online_Flag && !s_last_online)
     {
-        uart1_SendStr("[NET] online\r\n");
+        LOG_NET("online");
         SysLog_Add(LOG_EVT_CONFIG, "NET_RECOVER");
     }
     if(!ESP8266_Online_Flag && s_last_online)
     {
-        uart1_SendStr("[NET] offline\r\n");
+        LOG_NET("offline");
         SysLog_Add(LOG_EVT_ALARM, "NET_OFFLINE");
         g_runtime_exception_count++;
     }

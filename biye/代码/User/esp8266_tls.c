@@ -5,6 +5,8 @@
 #include "delay.h"
 #include "string.h"
 #include <stdio.h>
+#include "log.h"
+#include "app_params.h"
 
 #define ESP_DELAY_MS(ms) delay_ms((u16)(ms))
 
@@ -79,8 +81,8 @@ static void Net_MarkOffline(const char *reason);
 static void Net_LogSimple(const char *msg)
 {
 		if(msg == NULL) return;
-		UART1_SendStr((char *)msg);
-		UART1_SendStr("\r\n");
+		/* 兼容既有输出，但统一格式给测试复现用 */
+		LOG_NET("%s", msg);
 }
 
 static void Net_MarkOffline(const char *reason)
@@ -88,15 +90,13 @@ static void Net_MarkOffline(const char *reason)
 		if(ESP8266_Online_Flag != 0u)
 		{
 				g_net_offline_count++;
-				Net_LogSimple("[NET] offline");
+				LOG_NET("offline");
 		}
 		ESP8266_Online_Flag = 0u;
 		tls_inited = 0u;
 		if(reason != NULL)
 		{
-				UART1_SendStr("[NET] reason: ");
-				UART1_SendStr((char *)reason);
-				UART1_SendStr("\r\n");
+				LOG_NET("reason: %s", reason);
 		}
 }
 

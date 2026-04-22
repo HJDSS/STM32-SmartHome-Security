@@ -20,6 +20,8 @@
 #include "esp8266_tls.h"
 #include "esp8266_onenet_mqtt.h"
 #include "syslog.h"
+#include "app_params.h"
+#include "log.h"
 
 /* 兼容需求中函数名 */
 #define OV7670_StartCapture()     OV7670_FIFO_StartCapture()
@@ -41,7 +43,7 @@ static FATFS s_fatfs;
 static u8 s_fat_mounted;
 volatile u16 g_cap_replay_count = 0u;
 volatile u16 g_cap_sd_write_fail_count = 0u;
-#define CAP_OFFLINE_Q_DEPTH  8u
+#define CAP_OFFLINE_Q_DEPTH  ((u8)APP_CAP_OFFLINE_Q_DEPTH)
 typedef struct
 {
 	u8 used;
@@ -98,11 +100,13 @@ static void capture_flush_offline_queue(void)
 			s_cap_q_flush_ok++;
 			g_cap_replay_count++;
 			SysLog_Add(LOG_EVT_CONFIG, "CAP_Q_FLUSH_OK");
+			LOG_NET("cap replay ok: %s", s_cap_q[s_cap_q_head].name);
 		}
 		else
 		{
 			s_cap_q_flush_fail++;
 			SysLog_Add(LOG_EVT_ALARM, "CAP_Q_FLUSH_FAIL");
+			LOG_NET("cap replay fail");
 			break;
 		}
 	}
