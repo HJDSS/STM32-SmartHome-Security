@@ -3,6 +3,7 @@
 #include "board_config.h"
 #include "delay.h"
 #include "esp8266_tls.h"  /* [M1.7] 读 g_net_stage / g_wifi_substage / g_wifi_err / g_wifi_fail_reason */
+#include "esp8266_onenet_mqtt.h"  /* [M1.11] 读 g_mqtt_substage / g_mqtt_err */
 #include <stdio.h>
 
 void OLED_View_Init(void)
@@ -133,7 +134,20 @@ void OLED_View_ShowNetState(u8 wifi_ok, u8 hb_ok)
                 OLED_ShowString(0, 0, line, 16);
                 break;
             case 3u:
-                OLED_ShowString(0, 0, "NET:ERR MQTT    ", 16);
+                /* [M1.11] 把 MQTT 子阶段 + 失败代码一起显示，
+                 * 格式 "MERR S%u E%u"，让用户一眼定位死哪步。
+                 * 例："NET:MERR S6 E4 " = 死在 MQTTCONN，+MQTTDISCONNECTED 被拒（鉴权问题）
+                 *     "NET:MERR S1 E1 " = 死在 MQTTCLEAN，AT 固件不支持 MQTT
+                 *     "NET:MERR S6 E6 " = MQTTCONN 45s 超时（broker 不通） */
+                {
+                    u8 msub = g_mqtt_substage;
+                    u8 merr = g_mqtt_err;
+                    if(msub > 9u) msub = 9u;
+                    if(merr > 9u) merr = 9u;
+                    sprintf(line, "NET:MERR S%u E%u ", (unsigned)msub, (unsigned)merr);
+                    line[16] = '\0';
+                    OLED_ShowString(0, 0, line, 16);
+                }
                 break;
             default:
                 OLED_ShowString(0, 0, "NET:ERR ?       ", 16);

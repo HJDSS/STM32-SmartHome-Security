@@ -17,6 +17,32 @@
 extern char Uart2_Buf[];
 extern void ESP8266_CooperativeYield(void);
 
+/* [M1.11] MQTT 子阶段 + 失败代码，供 OLED_View_ShowNetState 显示，
+ * 快速定位 "NET:ERR MQTT" 到底死在哪一步：
+ *   g_mqtt_substage:
+ *     0 = 刚进 FSM，发 AT+MQTTCLEAN=0
+ *     1 = 等 MQTTCLEAN OK
+ *     2 = 发 AT+MQTTUSERCFG=0,<scheme>,"cid","usr","pwd",0,0,""（短形式）
+ *     3 = 短形式失败，走 LONG* 三条命令的长写
+ *     5 = 发 AT+MQTTCONN=0,"broker",port,auto
+ *     6 = 等 +MQTTCONNECTED: 或 +MQTTDISCONNECTED:
+ *     7 = 订阅 post/reply 主题
+ *     8 = 订阅 property/set 主题
+ *     9 = 连通后常驻
+ *   g_mqtt_err:
+ *     0 = 无
+ *     1 = MQTTCLEAN ERROR/超时（AT 固件可能不支持 MQTT 命令族）
+ *     2 = 短形式 USERCFG 失败（走长形式还没最终失败）
+ *     3 = 长形式 USERCFG 失败（AT 固件真的不支持 MQTT，或 token 太长被截）
+ *     4 = MQTTCONN 返回 +MQTTDISCONNECTED（TCP 通了但 MQTT 鉴权被拒
+ *           → 最常见原因：OneNET token 已过期 / sign 错 / 产品ID 错 / 设备名错）
+ *     5 = MQTTCONN 返回 ERROR（AT 参数不合法或模组不支持该命令）
+ *     6 = MQTTCONN 45s 超时（broker 域名解析失败 / 路由到 mqtts.heclouds.com 不通）
+ *     7 = post/reply 订阅失败
+ *     8 = property/set 订阅失败 */
+volatile u8 g_mqtt_substage = 0u;
+volatile u8 g_mqtt_err = 0u;
+
 #if ONENET_MQTT_ENABLE
 
 static void UART2_SendBuffer(const u8 *p, u16 len)
@@ -257,9 +283,12 @@ u8 ESP8266_OneNET_MqttFsm_Poll(void)
 		switch(s_mqtt_fsm_st)
 		{
 		case 0:
+				g_mqtt_substage = 0u;
+				g_mqtt_err = 0u;
 				ESP8266_Online_Flag = 0;
 				ESP8266_AT_Nb_Begin("AT+MQTTCLEAN=0", "OK", 3000);
 				s_mqtt_fsm_st = 1;
+				g_mqtt_substage = 1u;
 				return 0;
 		case 1:
 				r = ESP8266_AT_Nb_Poll();
@@ -267,6 +296,7 @@ u8 ESP8266_OneNET_MqttFsm_Poll(void)
 						return 0;
 				if(r == 2)
 				{
+						g_mqtt_err = 1u;    /* MQTTCLEAN 失败 → AT 固件可能无 MQTT 命令族 */
 						s_mqtt_fsm_st = 100;
 						return 2;
 				}
@@ -278,6 +308,7 @@ u8 ESP8266_OneNET_MqttFsm_Poll(void)
 						ONENET_MQTT_PASSWORD);
 				ESP8266_AT_Nb_Begin(cmd, "OK", 8000);
 				s_mqtt_fsm_st = 2;
+				g_mqtt_substage = 2u;
 				return 0;
 		case 2:
 				r = ESP8266_AT_Nb_Poll();
@@ -286,33 +317,41 @@ u8 ESP8266_OneNET_MqttFsm_Poll(void)
 				if(r == 1)
 				{
 						s_mqtt_fsm_st = 5;
+						g_mqtt_substage = 5u;
 						return 0;
 				}
+				g_mqtt_err = 2u;       /* 短形式失败，落到长形式兜底 */
 				s_mqtt_fsm_st = 3;
+				g_mqtt_substage = 3u;
 				return 0;
 		case 3:
 				sprintf(cmd, "AT+MQTTUSERCFG=0,%d,\"\",\"\",\"\",0,0,\"\"", (int)ONENET_MQTT_AT_SCHEME);
 				if(!ESP8266_AT_SendWait(cmd, "OK", 5000))
 				{
+						g_mqtt_err = 3u;
 						s_mqtt_fsm_st = 100;
 						return 2;
 				}
 				if(!MqttAT_SendLongBlob("AT+MQTTLONGCLIENTID=", cid, cid_len, 3000, 8000))
 				{
+						g_mqtt_err = 3u;
 						s_mqtt_fsm_st = 100;
 						return 2;
 				}
 				if(!MqttAT_SendLongBlob("AT+MQTTLONGUSERNAME=", usr, usr_len, 3000, 8000))
 				{
+						g_mqtt_err = 3u;
 						s_mqtt_fsm_st = 100;
 						return 2;
 				}
 				if(!MqttAT_SendLongBlob("AT+MQTTLONGPASSWORD=", pwd, pwd_len, 3000, 8000))
 				{
+						g_mqtt_err = 3u;
 						s_mqtt_fsm_st = 100;
 						return 2;
 				}
 				s_mqtt_fsm_st = 5;
+				g_mqtt_substage = 5u;
 				return 0;
 		case 5:
 				sprintf(cmd, "AT+MQTTCONN=0,\"%s\",%d,%d",
@@ -322,6 +361,7 @@ u8 ESP8266_OneNET_MqttFsm_Poll(void)
 				UART2_SendString("\r\n");
 				ESP8266_WaitAny2_Nb_Begin("+MQTTCONNECTED:", "+MQTTDISCONNECTED:", 45000);
 				s_mqtt_fsm_st = 6;
+				g_mqtt_substage = 6u;
 				return 0;
 		case 6:
 				r = ESP8266_WaitAny2_Nb_Poll();
@@ -329,11 +369,14 @@ u8 ESP8266_OneNET_MqttFsm_Poll(void)
 						return 0;
 				if(r != 1)
 				{
+						/* [M1.11] 区分三种失败：ERROR=AT 参数/不支持；+MQTTDISCONNECTED:=鉴权被拒；
+						 * 都不匹配=45s 超时（DNS/路由不通） */
 						if(strstr(Uart2_Buf, "ERROR") != NULL)
-						{
-								s_mqtt_fsm_st = 100;
-								return 2;
-						}
+								g_mqtt_err = 5u;
+						else if(strstr(Uart2_Buf, "+MQTTDISCONNECTED") != NULL)
+								g_mqtt_err = 4u;
+						else
+								g_mqtt_err = 6u;
 						s_mqtt_fsm_st = 100;
 						return 2;
 				}
@@ -345,6 +388,7 @@ u8 ESP8266_OneNET_MqttFsm_Poll(void)
 				UART2_SendString("\r\n");
 				msw_begin(12000);
 				s_mqtt_fsm_st = 7;
+				g_mqtt_substage = 7u;
 				return 0;
 		case 7:
 				r = msw_poll();
@@ -352,6 +396,7 @@ u8 ESP8266_OneNET_MqttFsm_Poll(void)
 						return 0;
 				if(r != 1)
 				{
+						g_mqtt_err = 7u;
 						s_mqtt_fsm_st = 100;
 						return 2;
 				}
@@ -363,6 +408,7 @@ u8 ESP8266_OneNET_MqttFsm_Poll(void)
 				UART2_SendString("\r\n");
 				msw_begin(12000);
 				s_mqtt_fsm_st = 8;
+				g_mqtt_substage = 8u;
 				return 0;
 		case 8:
 				r = msw_poll();
@@ -370,11 +416,14 @@ u8 ESP8266_OneNET_MqttFsm_Poll(void)
 						return 0;
 				if(r != 1)
 				{
+						g_mqtt_err = 8u;
 						s_mqtt_fsm_st = 100;
 						return 2;
 				}
 				ESP8266_Online_Flag = 1;
 				s_mqtt_fsm_st = 9;
+				g_mqtt_substage = 9u;
+				g_mqtt_err = 0u;
 				return 1;
 		case 9:
 				return 1;

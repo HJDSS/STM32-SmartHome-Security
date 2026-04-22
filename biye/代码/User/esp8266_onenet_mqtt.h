@@ -59,6 +59,11 @@ u8 ESP8266_OneNET_Mqtt_Connect(void);
 void ESP8266_OneNET_MqttFsm_Reset(void);
 u8 ESP8266_OneNET_MqttFsm_Poll(void);
 
+/* [M1.11] MQTT 子阶段 + 错误码，OLED 第 1 行 "NET:ERR MQTT" 变为 "NET:MERR Sxx Ex"
+ * 以定位 MQTTCLEAN / MQTTUSERCFG / MQTTCONN / MQTTSUB 中哪一步失败。详见实现文件注释。*/
+extern volatile u8 g_mqtt_substage;
+extern volatile u8 g_mqtt_err;
+
 /* 供 OneNET_Publish_Data：AT+MQTTPUBRAW 发送 UTF-8 JSON */
 u8 OneNET_AT_Mqtt_PublishRaw(const char *topic, const char *payload, u16 len);
 
