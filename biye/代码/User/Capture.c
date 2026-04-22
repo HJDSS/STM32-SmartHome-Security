@@ -92,7 +92,10 @@ static void capture_flush_offline_queue(void)
 {
 	while(s_cap_q_head != s_cap_q_tail && s_cap_q[s_cap_q_head].used)
 	{
+		char sent_name[32];
 		if(ESP8266_Online_Flag == 0u) break;
+		strncpy(sent_name, s_cap_q[s_cap_q_head].name, sizeof(sent_name) - 1u);
+		sent_name[sizeof(sent_name) - 1u] = '\0';
 		if(capture_publish_saved(s_cap_q[s_cap_q_head].name, s_cap_q[s_cap_q_head].tick))
 		{
 			s_cap_q[s_cap_q_head].used = 0u;
@@ -100,7 +103,7 @@ static void capture_flush_offline_queue(void)
 			s_cap_q_flush_ok++;
 			g_cap_replay_count++;
 			SysLog_Add(LOG_EVT_CONFIG, "CAP_Q_FLUSH_OK");
-			LOG_NET("cap replay ok: %s", s_cap_q[s_cap_q_head].name);
+			LOG_NET("cap replay ok: %s", sent_name);
 		}
 		else
 		{
@@ -174,9 +177,17 @@ static void capture_one_to_sd(void)
 	if(!s_fat_mounted)
 	{
 		if(f_mount(&s_fatfs, "0:", 1) == FR_OK)
+		{
 			s_fat_mounted = 1;
+			SysLog_Add(LOG_EVT_CONFIG, "SD_MOUNT_OK");
+			LOG_SD("mount ok");
+		}
 		else
+		{
+			SysLog_Add(LOG_EVT_ALARM, "SD_MOUNT_FAIL");
+			LOG_SD("mount fail");
 			return;
+		}
 	}
 
 	fr = f_open(&fp, name, FA_CREATE_ALWAYS | FA_WRITE);
@@ -186,6 +197,8 @@ static void capture_one_to_sd(void)
 	write_bmp_header_rgb565_bottom_up(&fp);
 
 	/* 采集：StartCapture 内部等待 VSYNC 边沿，视为采集完成标志 */
+	SysLog_Add(LOG_EVT_CONFIG, "CAP_BEGIN");
+	LOG_SD("capture begin");
 	OV7670_StartCapture();
 	OV7670_ResetReadPtr();
 
@@ -208,11 +221,17 @@ static void capture_one_to_sd(void)
 	(void)f_close(&fp);
 
 	if(fr == FR_OK)
+	{
+		SysLog_Add(LOG_EVT_CONFIG, "CAP_END_OK");
+		LOG_SD("bmp save ok");
 		Capture_OnSaved(name);
+	}
 	else
 	{
 		g_cap_sd_write_fail_count++;
 		SysLog_Add(LOG_EVT_ALARM, "CAP_SD_WRITE_FAIL");
+		SysLog_Add(LOG_EVT_ALARM, "CAP_END_FAIL");
+		LOG_SD("bmp save fail");
 	}
 }
 #endif
