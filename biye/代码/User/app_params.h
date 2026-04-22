@@ -24,6 +24,9 @@
 #ifndef APP_STAT_REPORT_MS
 #define APP_STAT_REPORT_MS         30000u
 #endif
+#ifndef APP_STAT_EXPORT_MS
+#define APP_STAT_EXPORT_MS         60000u
+#endif
 
 /* 抓拍离线补传队列深度 */
 #ifndef APP_CAP_OFFLINE_Q_DEPTH

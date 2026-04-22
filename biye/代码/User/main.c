@@ -238,6 +238,27 @@ static void app_report_stats(void)
              (unsigned long)g_runtime_exception_count);
 }
 
+static void app_export_stats(void)
+{
+    static u32 s_last_ms = 0u;
+    char line[220];
+    u32 now = Bare_GetTickMs();
+    if((u32)(now - s_last_ms) < (u32)APP_STAT_EXPORT_MS) return;
+    s_last_ms = now;
+
+    /* 固定 JSON 字段名，便于第6章测试脚本稳定解析 */
+    sprintf(line,
+            "{\"tag\":\"STAT_EXPORT\",\"tick\":%lu,\"false_alarm\":%lu,\"reconnect\":%lu,\"replay\":%u,\"sd_fail\":%u,\"run_ex_72h\":%lu}",
+            (unsigned long)now,
+            (unsigned long)g_false_alarm_count,
+            (unsigned long)g_net_reconnect_count,
+            (unsigned)g_cap_replay_count,
+            (unsigned)g_cap_sd_write_fail_count,
+            (unsigned long)g_runtime_exception_count);
+    uart1_SendStr(line);
+    uart1_SendStr("\r\n");
+}
+
 static void app_poll_alarm_and_act(void)
 {
     alarm_type_t alarm = ALARM_NONE;
@@ -331,6 +352,7 @@ int main(void)
         app_poll_net();
         Bare_CapturePoll();
         app_report_stats();
+        app_export_stats();
         OLED_View_RefreshDashboard(&g_sensor, LockManager_GetState(), &g_esp);
         delay_ms(20);
     }
