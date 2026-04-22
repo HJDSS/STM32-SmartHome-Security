@@ -87,8 +87,8 @@
         "-NoProfile",
         "-ExecutionPolicy",
         "Bypass",
-        "-Command",
-        "$ErrorActionPreference='Stop'; $root='${workspaceFolder}'; $uv4='C:\\Keil_v5\\UV4\\UV4.exe'; $proj=(Get-ChildItem -Path \"$root\\biye\\代码\\User\" -Filter '*.uvprojx' | Select-Object -First 1); $log=\"$root\\biye\\代码\\Output\\build.log\"; if(-not (Test-Path $uv4)){ throw 'UV4.exe not found at C:\\Keil_v5\\UV4\\UV4.exe'; }; if(-not $proj){ throw 'No .uvprojx found in biye\\代码\\User'; }; & $uv4 -j0 -b $proj.FullName -t 'Target 1' -o $log; $ec=$LASTEXITCODE; if($ec -ne 0){ if(Test-Path $log){ Start-Process $log }; exit $ec }; & powershell -NoProfile -ExecutionPolicy Bypass -File \"$root\\.vscode\\post_build_verify.ps1\" -OutputDir \"$root\\biye\\代码\\Output\" -MapPath \"$root\\biye\\代码\\User\\Listings\\程序.map\" -MaxBinSizeKB 512; exit $LASTEXITCODE"
+        "-File",
+        "${workspaceFolder}\\.vscode\\smart_build.ps1"
       ],
       "group": "build",
       "problemMatcher": [
