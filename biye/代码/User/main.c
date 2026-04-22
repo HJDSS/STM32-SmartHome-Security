@@ -16,6 +16,7 @@
 #include "keyboard_sm.h"
 #include "lock_manager.h"
 #include "oled_view.h"
+#include "oled.h"         /* [M1.9] 插桩需要 OLED_ShowChar 直接写格 */
 #include "linkage.h"
 #include "esp8266_tls.h"
 #include "syslog.h"
@@ -418,6 +419,30 @@ static void app_poll_net(void)
 #endif
 }
 
+/* [M1.9] 主循环单环节阻塞定位探针。
+ * 在每个 *_Tick/*_Poll 调用之前，把一个标识字母写到 OLED 第 3 行最后一格
+ * (x=120,y=48)。正常情况下 main loop 一圈走完，这个格子会被
+ * OLED_View_RefreshDashboard 里第 3 行整行刷新覆盖回空格；
+ * 如果 main loop 卡在某个环节，OLED 上会持久显示那一环节的字母：
+ *   Z = while(1) 头部（上一次 delay_ms 刚出）
+ *   K = KeyboardSM_Tick      前
+ *   L = LockManager_Tick     前
+ *   S = app_poll_sensors     前（DHT11 / MQ2 / PIR）
+ *   A = app_poll_alarm_and_act 前
+ *   N = app_poll_net         前（ESP8266 FSM）
+ *   C = Bare_CapturePoll     前（OV7670 + SD）
+ *   R = app_report_stats     前
+ *   X = app_export_stats     前（UART1 写 JSON）
+ *   O = OLED_View_RefreshDashboard 前
+ * 用法：Rebuild+Download 后上电，静等 10~30s，看 OLED 第 3 行末尾停在哪个字母。
+ * 一旦定位出具体环节，就可以针对性插更细的桩或去掉该环节先让联网跑起来。
+ * 副作用：每圈多 10 次单字符 I2C 写（SSD1306 软件 I2C，每次 ~1ms），共 +10ms/圈。
+ */
+static void app_dbg_mark(char c)
+{
+    OLED_ShowChar(120, 48, c, 16);
+}
+
 int main(void)
 {
     app_init();
@@ -425,15 +450,16 @@ int main(void)
 
     while(1)
     {
-        KeyboardSM_Tick();
-        LockManager_Tick();
-        app_poll_sensors();
-        app_poll_alarm_and_act();
-        app_poll_net();
-        Bare_CapturePoll();
-        app_report_stats();
-        app_export_stats();
-        OLED_View_RefreshDashboard(&g_sensor, LockManager_GetState(), &g_esp);
+        app_dbg_mark('Z');
+        app_dbg_mark('K'); KeyboardSM_Tick();
+        app_dbg_mark('L'); LockManager_Tick();
+        app_dbg_mark('S'); app_poll_sensors();
+        app_dbg_mark('A'); app_poll_alarm_and_act();
+        app_dbg_mark('N'); app_poll_net();
+        app_dbg_mark('C'); Bare_CapturePoll();
+        app_dbg_mark('R'); app_report_stats();
+        app_dbg_mark('X'); app_export_stats();
+        app_dbg_mark('O'); OLED_View_RefreshDashboard(&g_sensor, LockManager_GetState(), &g_esp);
         delay_ms(20);
     }
 }
