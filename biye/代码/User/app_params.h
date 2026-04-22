@@ -11,8 +11,26 @@
 #ifndef APP_DHT_POLL_MS
 #define APP_DHT_POLL_MS            2000u
 #endif
+#ifndef APP_DHT_RETRY_BACKOFF_MAX_MS
+#define APP_DHT_RETRY_BACKOFF_MAX_MS 16000u
+#endif
+#ifndef APP_DHT_OFFLINE_FAILS
+#define APP_DHT_OFFLINE_FAILS      3u
+#endif
+#ifndef APP_DHT_RECOVER_SUCCESSES
+#define APP_DHT_RECOVER_SUCCESSES  2u
+#endif
 #ifndef APP_MQ2_POLL_MS
 #define APP_MQ2_POLL_MS            250u
+#endif
+#ifndef APP_MQ2_STUCK_DIFF_ADC
+#define APP_MQ2_STUCK_DIFF_ADC     3u
+#endif
+#ifndef APP_MQ2_STUCK_COUNT
+#define APP_MQ2_STUCK_COUNT        40u
+#endif
+#ifndef APP_MQ2_RECOVER_GOOD_COUNT
+#define APP_MQ2_RECOVER_GOOD_COUNT 4u
 #endif
 
 /* PIR 触发抑制窗口（非布防/高频触发时用于抑制） */
