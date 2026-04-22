@@ -142,6 +142,15 @@ static void app_init(void)
     Linkage_Init();
     SysLog_Init();
     SysLog_Add(LOG_EVT_CONFIG, "BOOT");
+
+    /* [M1.5] 自检页结束后先画一次"初始仪表盘"：
+     * 目的：M3 未完成前，ESP8266_OneNET_InitFsm_Poll 首次进入 case 40 会
+     *       同步阻塞 10~45s 做 CWJAP/MQTTCONN，期间主循环不能刷 OLED。
+     *       若不做这次"预刷"，用户会看到自检页挂很久而误以为系统死机。
+     *       g_sensor/g_esp 均为 BSS 零值，初显为 T:00 H:00 MQ:0 / NET:INIT /
+     *       Input Password / DISARMED，与 M3 落地后一致，不引入过渡 UI。
+     */
+    OLED_View_RefreshDashboard(&g_sensor, LockManager_GetState(), &g_esp);
 }
 
 static void app_poll_sensors(void)
