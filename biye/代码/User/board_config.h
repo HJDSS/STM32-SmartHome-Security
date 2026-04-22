@@ -295,7 +295,10 @@
  * 1=SH1106（常见需列偏移 2）
  */
 #ifndef OLED_PANEL_TYPE
-#define OLED_PANEL_TYPE              0u
+/* [M1.10] 从 0 改为 1：实物照片显示每行首字母被左切 (ET:INIT / nput Password /
+ * ISARMED)，这是典型的 SH1106 面板被按 SSD1306 驱（列偏移 2 的可视区没对齐）
+ * 的故障。OLED_COLUMN_OFFSET 会随之自动变为 2。 */
+#define OLED_PANEL_TYPE              1u
 #endif
 
 #ifndef OLED_COLUMN_OFFSET

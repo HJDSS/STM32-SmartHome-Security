@@ -94,25 +94,55 @@ u8 DHT11_Read_Bit(void)
     return (dht11_last_dq != 0) ? 1u : 0u;
 }
 
+/* [M1.10] DHT11_Read_Byte：原先两个 while 都没有超时，而调用者
+ * DHT11_Read_Data 已经 __disable_irq()。只要某一位的高/低电平没出现
+ * （抖动、掉帧、松动、未连传感器），整机就卡死在这里，
+ * SysTick 也被关掉 → main loop 永远停在 app_poll_sensors → OLED 再不刷，
+ * 表现正是 "F=01 T=166 完全静止"。
+ *
+ * 修法：两个等边沿的 while 都加 DHT11_TIMEOUT_US 节拍超时；超时后
+ * 通过静态标志 s_byte_timeout 通知上层，避免改动公有 API 返回类型。
+ * 上层 DHT11_Read_Data 检测到标志置位立即退出临界区并重试/报错。
+ * 这样最坏情况单字节耗时 ~DHT11_TIMEOUT_US us，五字节也在 ms 级，
+ * 不会阻塞主循环几十毫秒以上。 */
+volatile u8 dht11_byte_timeout = 0u;
+
 u8 DHT11_Read_Byte(void)
 {
     u8 i;
     u8 dat = 0;
+    u16 timeout;
+
+    dht11_byte_timeout = 0u;
 
     for(i = 0; i < 8; i++)
     {
+        timeout = DHT11_TIMEOUT_US;
         while(DHT11_DQ_IN == 0)
         {
+            if(timeout-- == 0u)
+            {
+                dht11_byte_timeout = 1u;
+                dht11_last_err = 2;
+                return 0;
+            }
             delay_us(1);
         }
-        delay_us(30);
+        delay_us(BOARD_DHT_BIT_SAMPLE_US);
         dat <<= 1;
         if(DHT11_DQ_IN == 1)
         {
             dat |= 1;
         }
+        timeout = DHT11_TIMEOUT_US;
         while(DHT11_DQ_IN == 1)
         {
+            if(timeout-- == 0u)
+            {
+                dht11_byte_timeout = 1u;
+                dht11_last_err = 2;
+                return dat;
+            }
             delay_us(1);
         }
     }
@@ -139,13 +169,25 @@ u8 DHT11_Read_Data(u8 *temp, u8 *humi)
             continue;
         }
 
+        /* [M1.10] 进临界区要把超时标志先清零；任一字节 Read_Byte 超时就立即
+         * ExitCritical 并走下一轮重试，避免中断长时间禁用 */
+        dht11_byte_timeout = 0u;
         DHT11_EnterCritical();
         for(i = 0; i < 5; i++)
         {
             buf[i] = DHT11_Read_Byte();
             dht11_dbg_vals[3 + i] = buf[i];
+            if(dht11_byte_timeout)
+                break;
         }
         DHT11_ExitCritical();
+
+        if(dht11_byte_timeout)
+        {
+            dht11_last_err = 2;
+            delay_ms(2);
+            continue;
+        }
 
         checksum = (u8)(buf[0] + buf[1] + buf[2] + buf[3]);
         if(checksum != buf[4])
