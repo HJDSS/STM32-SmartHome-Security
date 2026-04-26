@@ -14,7 +14,15 @@ $cfg = Join-Path $mermaidDir "mermaid-config.json"
 $pp = Join-Path $mermaidDir "puppeteer-config.json"
 $compiledDirName = ([char]0x7F16) + ([char]0x8BD1) + ([char]0x4EA7) + ([char]0x7269)
 $compiledDir = Join-Path (Split-Path -Parent $root) $compiledDirName
-$texFile = Get-ChildItem -Path $root -Filter "*.tex" | Select-Object -First 1
+$texFile = $null
+$mainTex = Join-Path $root ([char]0x8BBA + [char]0x6587 + ".tex") # 论文.tex
+if (Test-Path $mainTex) {
+  $texFile = Get-Item $mainTex
+} else {
+  $texFile = Get-ChildItem -Path $root -Filter "*.tex" |
+    Where-Object { $_.Name -notmatch "backup|\.backup_" } |
+    Select-Object -First 1
+}
 if (-not $texFile) { throw "No .tex file found in source directory." }
 $texName = $texFile.Name
 $texBase = $texFile.BaseName

@@ -1,15 +1,15 @@
 [0] Config.pm:328> INFO - This is Biber 2.21
 [0] Config.pm:331> INFO - Logfile is '论文.blg'
-[95] biber-MSWIN64:342> INFO - === 
-[135] Biber.pm:421> INFO - Reading '论文.bcf'
-[259] Biber.pm:1002> INFO - Found 30 citekeys in bib section 0
-[270] Biber.pm:4487> INFO - Processing section 0
-[279] Biber.pm:4678> INFO - Looking for bibtex file 'refs.bib' for section 0
-[345] bibtex.pm:1713> INFO - LaTeX decoding ...
-[374] bibtex.pm:1519> INFO - Found BibTeX data source 'refs.bib'
-[601] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'normalization = NFD' with 'normalization = prenormalized'
-[601] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'variable = shifted' with 'variable = non-ignorable'
-[601] Biber.pm:4307> INFO - Sorting list 'none/global//global/global/global' of type 'entry' with template 'none' and locale 'en-US'
-[601] Biber.pm:4313> INFO - No sort tailoring available for locale 'en-US'
-[620] bbl.pm:676> INFO - Writing '论文.bbl' with encoding 'UTF-8'
-[639] bbl.pm:779> INFO - Output to 论文.bbl
+[135] biber-MSWIN64:342> INFO - === 
+[180] Biber.pm:421> INFO - Reading '论文.bcf'
+[353] Biber.pm:1002> INFO - Found 33 citekeys in bib section 0
+[369] Biber.pm:4487> INFO - Processing section 0
+[381] Biber.pm:4678> INFO - Looking for bibtex file 'refs.bib' for section 0
+[440] bibtex.pm:1713> INFO - LaTeX decoding ...
+[486] bibtex.pm:1519> INFO - Found BibTeX data source 'refs.bib'
+[828] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'variable = shifted' with 'variable = non-ignorable'
+[828] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'normalization = NFD' with 'normalization = prenormalized'
+[828] Biber.pm:4307> INFO - Sorting list 'none/global//global/global/global' of type 'entry' with template 'none' and locale 'en-US'
+[828] Biber.pm:4313> INFO - No sort tailoring available for locale 'en-US'
+[866] bbl.pm:676> INFO - Writing '论文.bbl' with encoding 'UTF-8'
+[893] bbl.pm:779> INFO - Output to 论文.bbl

@@ -220,6 +220,66 @@
       \range{pages}{30}
       \keyw{smart_home_survey_2017}
     \endentry
+    \entry{home_security_iot_2020}{article}{}{}
+      \name{author}{2}{}{%
+        {{hash=7587f566caf617777f051fde338a6f06}{%
+           family={Raut},
+           familyi={R\bibinitperiod},
+           given={S.\bibnamedelimi S.},
+           giveni={S\bibinitperiod\bibinitdelim S\bibinitperiod}}}%
+        {{hash=866abcf3cc888dfe4a4afaa464f0ad4f}{%
+           family={Awale},
+           familyi={A\bibinitperiod},
+           given={R.\bibnamedelimi N.},
+           giveni={R\bibinitperiod\bibinitdelim N\bibinitperiod}}}%
+      }
+      \name{namea}{2}{}{%
+        {{hash=7587f566caf617777f051fde338a6f06}{%
+           family={Raut},
+           familyi={R\bibinitperiod},
+           given={S.\bibnamedelimi S.},
+           giveni={S\bibinitperiod\bibinitdelim S\bibinitperiod}}}%
+        {{hash=866abcf3cc888dfe4a4afaa464f0ad4f}{%
+           family={Awale},
+           familyi={A\bibinitperiod},
+           given={R.\bibnamedelimi N.},
+           giveni={R\bibinitperiod\bibinitdelim N\bibinitperiod}}}%
+      }
+      \list{language}{1}{%
+        {english}%
+      }
+      \strng{namehash}{ff8bbaa43c64af53cc6d831b00d2f75d}
+      \strng{fullhash}{ff8bbaa43c64af53cc6d831b00d2f75d}
+      \strng{fullhashraw}{ff8bbaa43c64af53cc6d831b00d2f75d}
+      \strng{bibnamehash}{ff8bbaa43c64af53cc6d831b00d2f75d}
+      \strng{authorbibnamehash}{ff8bbaa43c64af53cc6d831b00d2f75d}
+      \strng{authornamehash}{ff8bbaa43c64af53cc6d831b00d2f75d}
+      \strng{authorfullhash}{ff8bbaa43c64af53cc6d831b00d2f75d}
+      \strng{authorfullhashraw}{ff8bbaa43c64af53cc6d831b00d2f75d}
+      \strng{nameabibnamehash}{ff8bbaa43c64af53cc6d831b00d2f75d}
+      \strng{nameanamehash}{ff8bbaa43c64af53cc6d831b00d2f75d}
+      \strng{nameafullhash}{ff8bbaa43c64af53cc6d831b00d2f75d}
+      \strng{nameafullhashraw}{ff8bbaa43c64af53cc6d831b00d2f75d}
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{International Journal of Engineering Research \& Technology}
+      \field{langid}{english}
+      \field{languageid}{english}
+      \field{lansortorder}{4}
+      \field{number}{6}
+      \field{title}{IoT Based Smart Home Security and Home Automation}
+      \field{usera}{J}
+      \field{userd}{english}
+      \field{userf}{english}
+      \field{volume}{9}
+      \field{year}{2020}
+      \field{dateera}{ce}
+      \field{pages}{866\bibrangedash 870}
+      \range{pages}{5}
+      \keyw{home_security_iot_2020}
+    \endentry
     \entry{bozorgi2026_iot_arch}{article}{}{}
       \name{author}{2}{}{%
         {{hash=0f2f764bf102a617144db5df39c0a8bf}{%
@@ -260,8 +320,8 @@
       \strng{nameanamehash}{330879d406830a207a733e37b43e5007}
       \strng{nameafullhash}{330879d406830a207a733e37b43e5007}
       \strng{nameafullhashraw}{330879d406830a207a733e37b43e5007}
-      \field{sortinit}{3}
-      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{sortinit}{5}
+      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{IEEE Access}
@@ -319,8 +379,8 @@
       \strng{nameanamehash}{c07e49b26b99cc77620f3a74334697ac}
       \strng{nameafullhash}{c07e49b26b99cc77620f3a74334697ac}
       \strng{nameafullhashraw}{c07e49b26b99cc77620f3a74334697ac}
-      \field{sortinit}{3}
-      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{sortinit}{5}
+      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{Future Internet}
@@ -338,6 +398,316 @@
       \field{pages}{1\bibrangedash 19}
       \range{pages}{19}
       \keyw{serepas2025_gateway}
+    \endentry
+    \entry{alkanan2026_biometric}{article}{}{}
+      \name{author}{2}{}{%
+        {{hash=bd325721928208744da0f037d3e896b6}{%
+           family={Alkanan},
+           familyi={A\bibinitperiod},
+           given={Mohammed},
+           giveni={M\bibinitperiod}}}%
+        {{hash=48ae78549e80c98132e7844cd68715cd}{%
+           family={Alharthi},
+           familyi={A\bibinitperiod},
+           given={Aisha},
+           giveni={A\bibinitperiod}}}%
+      }
+      \name{namea}{2}{}{%
+        {{hash=bd325721928208744da0f037d3e896b6}{%
+           family={Alkanan},
+           familyi={A\bibinitperiod},
+           given={Mohammed},
+           giveni={M\bibinitperiod}}}%
+        {{hash=48ae78549e80c98132e7844cd68715cd}{%
+           family={Alharthi},
+           familyi={A\bibinitperiod},
+           given={Aisha},
+           giveni={A\bibinitperiod}}}%
+      }
+      \list{language}{1}{%
+        {english}%
+      }
+      \strng{namehash}{1ac8139083fb7eeac03292a4201837f5}
+      \strng{fullhash}{1ac8139083fb7eeac03292a4201837f5}
+      \strng{fullhashraw}{1ac8139083fb7eeac03292a4201837f5}
+      \strng{bibnamehash}{1ac8139083fb7eeac03292a4201837f5}
+      \strng{authorbibnamehash}{1ac8139083fb7eeac03292a4201837f5}
+      \strng{authornamehash}{1ac8139083fb7eeac03292a4201837f5}
+      \strng{authorfullhash}{1ac8139083fb7eeac03292a4201837f5}
+      \strng{authorfullhashraw}{1ac8139083fb7eeac03292a4201837f5}
+      \strng{nameabibnamehash}{1ac8139083fb7eeac03292a4201837f5}
+      \strng{nameanamehash}{1ac8139083fb7eeac03292a4201837f5}
+      \strng{nameafullhash}{1ac8139083fb7eeac03292a4201837f5}
+      \strng{nameafullhashraw}{1ac8139083fb7eeac03292a4201837f5}
+      \field{sortinit}{6}
+      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Sensors}
+      \field{langid}{english}
+      \field{languageid}{english}
+      \field{lansortorder}{4}
+      \field{number}{2}
+      \field{title}{Multimodal Biometric Access Control for Smart Homes: Design and Evaluation}
+      \field{usera}{J}
+      \field{userd}{english}
+      \field{userf}{english}
+      \field{volume}{26}
+      \field{year}{2026}
+      \field{dateera}{ce}
+      \field{pages}{1\bibrangedash 21}
+      \range{pages}{21}
+      \keyw{alkanan2026_biometric}
+    \endentry
+    \entry{yusuf2026_gas_leakage}{article}{}{}
+      \name{author}{2}{}{%
+        {{hash=5c40abb0997b559f2899a61dcff9b61c}{%
+           family={Yusuf},
+           familyi={Y\bibinitperiod},
+           given={Ahmed},
+           giveni={A\bibinitperiod}}}%
+        {{hash=9e116c2742c0f51954d2ac7da33421da}{%
+           family={Khan},
+           familyi={K\bibinitperiod},
+           given={Bilal},
+           giveni={B\bibinitperiod}}}%
+      }
+      \name{namea}{2}{}{%
+        {{hash=5c40abb0997b559f2899a61dcff9b61c}{%
+           family={Yusuf},
+           familyi={Y\bibinitperiod},
+           given={Ahmed},
+           giveni={A\bibinitperiod}}}%
+        {{hash=9e116c2742c0f51954d2ac7da33421da}{%
+           family={Khan},
+           familyi={K\bibinitperiod},
+           given={Bilal},
+           giveni={B\bibinitperiod}}}%
+      }
+      \list{language}{1}{%
+        {english}%
+      }
+      \strng{namehash}{abecf9cb1026fca33c13923bdd991e21}
+      \strng{fullhash}{abecf9cb1026fca33c13923bdd991e21}
+      \strng{fullhashraw}{abecf9cb1026fca33c13923bdd991e21}
+      \strng{bibnamehash}{abecf9cb1026fca33c13923bdd991e21}
+      \strng{authorbibnamehash}{abecf9cb1026fca33c13923bdd991e21}
+      \strng{authornamehash}{abecf9cb1026fca33c13923bdd991e21}
+      \strng{authorfullhash}{abecf9cb1026fca33c13923bdd991e21}
+      \strng{authorfullhashraw}{abecf9cb1026fca33c13923bdd991e21}
+      \strng{nameabibnamehash}{abecf9cb1026fca33c13923bdd991e21}
+      \strng{nameanamehash}{abecf9cb1026fca33c13923bdd991e21}
+      \strng{nameafullhash}{abecf9cb1026fca33c13923bdd991e21}
+      \strng{nameafullhashraw}{abecf9cb1026fca33c13923bdd991e21}
+      \field{sortinit}{7}
+      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Journal of Building Engineering}
+      \field{langid}{english}
+      \field{languageid}{english}
+      \field{lansortorder}{4}
+      \field{title}{IoT-Enabled Residential Gas Leakage Monitoring and Emergency Response System}
+      \field{usera}{J}
+      \field{userd}{english}
+      \field{userf}{english}
+      \field{volume}{98}
+      \field{year}{2026}
+      \field{dateera}{ce}
+      \field{pages}{111205}
+      \range{pages}{1}
+      \keyw{yusuf2026_gas_leakage}
+    \endentry
+    \entry{mqtt_iot_review}{article}{}{}
+      \name{author}{4}{}{%
+        {{hash=2abccb28689217aa71c48352eec29f0f}{%
+           family={Farooq},
+           familyi={F\bibinitperiod},
+           given={Ugo},
+           giveni={U\bibinitperiod}}}%
+        {{hash=fefe714ab361ff61847e7fd8835d1cde}{%
+           family={Waseem},
+           familyi={W\bibinitperiod},
+           given={M.},
+           giveni={M\bibinitperiod}}}%
+        {{hash=bf417dbb62e7a1140d1f739c6998e661}{%
+           family={Khairi},
+           familyi={K\bibinitperiod},
+           given={Sadia},
+           giveni={S\bibinitperiod}}}%
+        {{hash=22abab8ee24e6fafccd1f62cdb3175b1}{%
+           family={Mazhar},
+           familyi={M\bibinitperiod},
+           given={Talha},
+           giveni={T\bibinitperiod}}}%
+      }
+      \name{namea}{4}{}{%
+        {{hash=2abccb28689217aa71c48352eec29f0f}{%
+           family={Farooq},
+           familyi={F\bibinitperiod},
+           given={Ugo},
+           giveni={U\bibinitperiod}}}%
+        {{hash=fefe714ab361ff61847e7fd8835d1cde}{%
+           family={Waseem},
+           familyi={W\bibinitperiod},
+           given={M.},
+           giveni={M\bibinitperiod}}}%
+        {{hash=bf417dbb62e7a1140d1f739c6998e661}{%
+           family={Khairi},
+           familyi={K\bibinitperiod},
+           given={Sadia},
+           giveni={S\bibinitperiod}}}%
+        {{hash=22abab8ee24e6fafccd1f62cdb3175b1}{%
+           family={Mazhar},
+           familyi={M\bibinitperiod},
+           given={Talha},
+           giveni={T\bibinitperiod}}}%
+      }
+      \list{language}{1}{%
+        {english}%
+      }
+      \strng{namehash}{7e984f3bb0eb090f4a46789349105295}
+      \strng{fullhash}{5c52a42320c5bcf0f06cd21298bd1d35}
+      \strng{fullhashraw}{5c52a42320c5bcf0f06cd21298bd1d35}
+      \strng{bibnamehash}{7e984f3bb0eb090f4a46789349105295}
+      \strng{authorbibnamehash}{7e984f3bb0eb090f4a46789349105295}
+      \strng{authornamehash}{7e984f3bb0eb090f4a46789349105295}
+      \strng{authorfullhash}{5c52a42320c5bcf0f06cd21298bd1d35}
+      \strng{authorfullhashraw}{5c52a42320c5bcf0f06cd21298bd1d35}
+      \strng{nameabibnamehash}{7e984f3bb0eb090f4a46789349105295}
+      \strng{nameanamehash}{7e984f3bb0eb090f4a46789349105295}
+      \strng{nameafullhash}{5c52a42320c5bcf0f06cd21298bd1d35}
+      \strng{nameafullhashraw}{5c52a42320c5bcf0f06cd21298bd1d35}
+      \field{sortinit}{8}
+      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{International Journal of Computer Applications}
+      \field{langid}{english}
+      \field{languageid}{english}
+      \field{lansortorder}{4}
+      \field{number}{7}
+      \field{title}{A Critical Analysis on the Security Concerns of Internet of Things (IoT)}
+      \field{usera}{J}
+      \field{userd}{english}
+      \field{userf}{english}
+      \field{volume}{111}
+      \field{year}{2015}
+      \field{dateera}{ce}
+      \field{pages}{1\bibrangedash 6}
+      \range{pages}{6}
+      \keyw{mqtt_iot_review}
+    \endentry
+    \entry{rivas2026_vulnerability}{article}{}{}
+      \name{author}{2}{}{%
+        {{hash=eff7befdb0b2d0feb309017f8794c282}{%
+           family={Rivas},
+           familyi={R\bibinitperiod},
+           given={David},
+           giveni={D\bibinitperiod}}}%
+        {{hash=d3817fe1456265c9ffa94bec989f9381}{%
+           family={Gomez},
+           familyi={G\bibinitperiod},
+           given={Maria},
+           giveni={M\bibinitperiod}}}%
+      }
+      \name{namea}{2}{}{%
+        {{hash=eff7befdb0b2d0feb309017f8794c282}{%
+           family={Rivas},
+           familyi={R\bibinitperiod},
+           given={David},
+           giveni={D\bibinitperiod}}}%
+        {{hash=d3817fe1456265c9ffa94bec989f9381}{%
+           family={Gomez},
+           familyi={G\bibinitperiod},
+           given={Maria},
+           giveni={M\bibinitperiod}}}%
+      }
+      \list{language}{1}{%
+        {english}%
+      }
+      \strng{namehash}{c229e75aa7f9a36f690eef21009388de}
+      \strng{fullhash}{c229e75aa7f9a36f690eef21009388de}
+      \strng{fullhashraw}{c229e75aa7f9a36f690eef21009388de}
+      \strng{bibnamehash}{c229e75aa7f9a36f690eef21009388de}
+      \strng{authorbibnamehash}{c229e75aa7f9a36f690eef21009388de}
+      \strng{authornamehash}{c229e75aa7f9a36f690eef21009388de}
+      \strng{authorfullhash}{c229e75aa7f9a36f690eef21009388de}
+      \strng{authorfullhashraw}{c229e75aa7f9a36f690eef21009388de}
+      \strng{nameabibnamehash}{c229e75aa7f9a36f690eef21009388de}
+      \strng{nameanamehash}{c229e75aa7f9a36f690eef21009388de}
+      \strng{nameafullhash}{c229e75aa7f9a36f690eef21009388de}
+      \strng{nameafullhashraw}{c229e75aa7f9a36f690eef21009388de}
+      \field{sortinit}{8}
+      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Computers \& Security}
+      \field{langid}{english}
+      \field{languageid}{english}
+      \field{lansortorder}{4}
+      \field{title}{Automated Vulnerability Scanning and Risk Prioritization in Consumer IoT Environments}
+      \field{usera}{J}
+      \field{userd}{english}
+      \field{userf}{english}
+      \field{volume}{141}
+      \field{year}{2026}
+      \field{dateera}{ce}
+      \field{pages}{103921}
+      \range{pages}{1}
+      \keyw{rivas2026_vulnerability}
+    \endentry
+    \entry{lian2025_trend}{article}{}{}
+      \name{author}{2}{}{%
+        {{hash=6f3ab56ec993c224459b94587c2b7857}{%
+           family={连志强},
+           familyi={连\bibinitperiod}}}%
+        {{hash=4bcaa1e1e8a2160567069c1eb3ec04bd}{%
+           family={黄宇},
+           familyi={黄\bibinitperiod}}}%
+      }
+      \name{namea}{2}{}{%
+        {{hash=6f3ab56ec993c224459b94587c2b7857}{%
+           family={连志强},
+           familyi={连\bibinitperiod}}}%
+        {{hash=4bcaa1e1e8a2160567069c1eb3ec04bd}{%
+           family={黄宇},
+           familyi={黄\bibinitperiod}}}%
+      }
+      \list{language}{1}{%
+        {chinese}%
+      }
+      \strng{namehash}{2596e1c716e8c2cdca5c49b9856eb557}
+      \strng{fullhash}{2596e1c716e8c2cdca5c49b9856eb557}
+      \strng{fullhashraw}{2596e1c716e8c2cdca5c49b9856eb557}
+      \strng{bibnamehash}{2596e1c716e8c2cdca5c49b9856eb557}
+      \strng{authorbibnamehash}{2596e1c716e8c2cdca5c49b9856eb557}
+      \strng{authornamehash}{2596e1c716e8c2cdca5c49b9856eb557}
+      \strng{authorfullhash}{2596e1c716e8c2cdca5c49b9856eb557}
+      \strng{authorfullhashraw}{2596e1c716e8c2cdca5c49b9856eb557}
+      \strng{nameabibnamehash}{2596e1c716e8c2cdca5c49b9856eb557}
+      \strng{nameanamehash}{2596e1c716e8c2cdca5c49b9856eb557}
+      \strng{nameafullhash}{2596e1c716e8c2cdca5c49b9856eb557}
+      \strng{nameafullhashraw}{2596e1c716e8c2cdca5c49b9856eb557}
+      \field{sortinit}{9}
+      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{电子技术应用研究}
+      \field{langid}{english}
+      \field{languageid}{chinese}
+      \field{lansortorder}{1}
+      \field{number}{4}
+      \field{title}{智能家居安防系统关键技术与发展趋势研究}
+      \field{usera}{J}
+      \field{userd}{chinese}
+      \field{userf}{chinese}
+      \field{volume}{51}
+      \field{year}{2025}
+      \field{dateera}{ce}
+      \field{pages}{15\bibrangedash 22}
+      \range{pages}{8}
+      \keyw{lian2025_trend}
     \endentry
     \entry{wang2024_stm32_linkage}{article}{}{}
       \name{author}{2}{}{%
@@ -371,8 +741,8 @@
       \strng{nameanamehash}{273379f2fe0c485249772b9f3c831e79}
       \strng{nameafullhash}{273379f2fe0c485249772b9f3c831e79}
       \strng{nameafullhashraw}{273379f2fe0c485249772b9f3c831e79}
-      \field{sortinit}{4}
-      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{自动化技术与应用}
@@ -423,8 +793,8 @@
       \strng{nameanamehash}{ec797f2cd37bc1dfac570495ef4e0ca2}
       \strng{nameafullhash}{ec797f2cd37bc1dfac570495ef4e0ca2}
       \strng{nameafullhashraw}{ec797f2cd37bc1dfac570495ef4e0ca2}
-      \field{sortinit}{4}
-      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{计算机测量与控制}
@@ -475,8 +845,8 @@
       \strng{nameanamehash}{149c79cbc36ece0cb648115866eac6ce}
       \strng{nameafullhash}{149c79cbc36ece0cb648115866eac6ce}
       \strng{nameafullhashraw}{149c79cbc36ece0cb648115866eac6ce}
-      \field{sortinit}{4}
-      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{电子设计工程}
@@ -495,65 +865,57 @@
       \range{pages}{6}
       \keyw{cai2023_stm32f103_control}
     \endentry
-    \entry{alkanan2026_biometric}{article}{}{}
+    \entry{chen2023_onenet_ai}{article}{}{}
       \name{author}{2}{}{%
-        {{hash=bd325721928208744da0f037d3e896b6}{%
-           family={Alkanan},
-           familyi={A\bibinitperiod},
-           given={Mohammed},
-           giveni={M\bibinitperiod}}}%
-        {{hash=48ae78549e80c98132e7844cd68715cd}{%
-           family={Alharthi},
-           familyi={A\bibinitperiod},
-           given={Aisha},
-           giveni={A\bibinitperiod}}}%
+        {{hash=e2f9d6b485fc1da9c14bf1d59f8a72ad}{%
+           family={陈志远},
+           familyi={陈\bibinitperiod}}}%
+        {{hash=a5bfd2984649422a861d654cfc98fb7a}{%
+           family={马宁},
+           familyi={马\bibinitperiod}}}%
       }
       \name{namea}{2}{}{%
-        {{hash=bd325721928208744da0f037d3e896b6}{%
-           family={Alkanan},
-           familyi={A\bibinitperiod},
-           given={Mohammed},
-           giveni={M\bibinitperiod}}}%
-        {{hash=48ae78549e80c98132e7844cd68715cd}{%
-           family={Alharthi},
-           familyi={A\bibinitperiod},
-           given={Aisha},
-           giveni={A\bibinitperiod}}}%
+        {{hash=e2f9d6b485fc1da9c14bf1d59f8a72ad}{%
+           family={陈志远},
+           familyi={陈\bibinitperiod}}}%
+        {{hash=a5bfd2984649422a861d654cfc98fb7a}{%
+           family={马宁},
+           familyi={马\bibinitperiod}}}%
       }
       \list{language}{1}{%
-        {english}%
+        {chinese}%
       }
-      \strng{namehash}{1ac8139083fb7eeac03292a4201837f5}
-      \strng{fullhash}{1ac8139083fb7eeac03292a4201837f5}
-      \strng{fullhashraw}{1ac8139083fb7eeac03292a4201837f5}
-      \strng{bibnamehash}{1ac8139083fb7eeac03292a4201837f5}
-      \strng{authorbibnamehash}{1ac8139083fb7eeac03292a4201837f5}
-      \strng{authornamehash}{1ac8139083fb7eeac03292a4201837f5}
-      \strng{authorfullhash}{1ac8139083fb7eeac03292a4201837f5}
-      \strng{authorfullhashraw}{1ac8139083fb7eeac03292a4201837f5}
-      \strng{nameabibnamehash}{1ac8139083fb7eeac03292a4201837f5}
-      \strng{nameanamehash}{1ac8139083fb7eeac03292a4201837f5}
-      \strng{nameafullhash}{1ac8139083fb7eeac03292a4201837f5}
-      \strng{nameafullhashraw}{1ac8139083fb7eeac03292a4201837f5}
-      \field{sortinit}{5}
-      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
+      \strng{namehash}{397118ee687a79b532ef433ebd56f177}
+      \strng{fullhash}{397118ee687a79b532ef433ebd56f177}
+      \strng{fullhashraw}{397118ee687a79b532ef433ebd56f177}
+      \strng{bibnamehash}{397118ee687a79b532ef433ebd56f177}
+      \strng{authorbibnamehash}{397118ee687a79b532ef433ebd56f177}
+      \strng{authornamehash}{397118ee687a79b532ef433ebd56f177}
+      \strng{authorfullhash}{397118ee687a79b532ef433ebd56f177}
+      \strng{authorfullhashraw}{397118ee687a79b532ef433ebd56f177}
+      \strng{nameabibnamehash}{397118ee687a79b532ef433ebd56f177}
+      \strng{nameanamehash}{397118ee687a79b532ef433ebd56f177}
+      \strng{nameafullhash}{397118ee687a79b532ef433ebd56f177}
+      \strng{nameafullhashraw}{397118ee687a79b532ef433ebd56f177}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
-      \field{journaltitle}{Sensors}
+      \field{journaltitle}{现代电子技术}
       \field{langid}{english}
-      \field{languageid}{english}
-      \field{lansortorder}{4}
-      \field{number}{2}
-      \field{title}{Multimodal Biometric Access Control for Smart Homes: Design and Evaluation}
+      \field{languageid}{chinese}
+      \field{lansortorder}{1}
+      \field{number}{21}
+      \field{title}{基于OneNET平台的智能安防系统设计与实现}
       \field{usera}{J}
-      \field{userd}{english}
-      \field{userf}{english}
-      \field{volume}{26}
-      \field{year}{2026}
+      \field{userd}{chinese}
+      \field{userf}{chinese}
+      \field{volume}{46}
+      \field{year}{2023}
       \field{dateera}{ce}
-      \field{pages}{1\bibrangedash 21}
-      \range{pages}{21}
-      \keyw{alkanan2026_biometric}
+      \field{pages}{107\bibrangedash 112}
+      \range{pages}{6}
+      \keyw{chen2023_onenet_ai}
     \endentry
     \entry{wang2024_home_security_wireless}{article}{}{}
       \name{author}{2}{}{%
@@ -587,8 +949,8 @@
       \strng{nameanamehash}{68393116b33375d27823b8045d36891b}
       \strng{nameafullhash}{68393116b33375d27823b8045d36891b}
       \strng{nameafullhashraw}{68393116b33375d27823b8045d36891b}
-      \field{sortinit}{5}
-      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{传感器与微系统}
@@ -607,64 +969,57 @@
       \range{pages}{5}
       \keyw{wang2024_home_security_wireless}
     \endentry
-    \entry{yusuf2026_gas_leakage}{article}{}{}
+    \entry{ji2024_stm32_zigbee}{article}{}{}
       \name{author}{2}{}{%
-        {{hash=5c40abb0997b559f2899a61dcff9b61c}{%
-           family={Yusuf},
-           familyi={Y\bibinitperiod},
-           given={Ahmed},
-           giveni={A\bibinitperiod}}}%
-        {{hash=9e116c2742c0f51954d2ac7da33421da}{%
-           family={Khan},
-           familyi={K\bibinitperiod},
-           given={Bilal},
-           giveni={B\bibinitperiod}}}%
+        {{hash=130c8248583d27603456a2ffa958b96c}{%
+           family={纪航},
+           familyi={纪\bibinitperiod}}}%
+        {{hash=ffd6ae1627701b4642d3c4b0eba0282c}{%
+           family={赵楠},
+           familyi={赵\bibinitperiod}}}%
       }
       \name{namea}{2}{}{%
-        {{hash=5c40abb0997b559f2899a61dcff9b61c}{%
-           family={Yusuf},
-           familyi={Y\bibinitperiod},
-           given={Ahmed},
-           giveni={A\bibinitperiod}}}%
-        {{hash=9e116c2742c0f51954d2ac7da33421da}{%
-           family={Khan},
-           familyi={K\bibinitperiod},
-           given={Bilal},
-           giveni={B\bibinitperiod}}}%
+        {{hash=130c8248583d27603456a2ffa958b96c}{%
+           family={纪航},
+           familyi={纪\bibinitperiod}}}%
+        {{hash=ffd6ae1627701b4642d3c4b0eba0282c}{%
+           family={赵楠},
+           familyi={赵\bibinitperiod}}}%
       }
       \list{language}{1}{%
-        {english}%
+        {chinese}%
       }
-      \strng{namehash}{abecf9cb1026fca33c13923bdd991e21}
-      \strng{fullhash}{abecf9cb1026fca33c13923bdd991e21}
-      \strng{fullhashraw}{abecf9cb1026fca33c13923bdd991e21}
-      \strng{bibnamehash}{abecf9cb1026fca33c13923bdd991e21}
-      \strng{authorbibnamehash}{abecf9cb1026fca33c13923bdd991e21}
-      \strng{authornamehash}{abecf9cb1026fca33c13923bdd991e21}
-      \strng{authorfullhash}{abecf9cb1026fca33c13923bdd991e21}
-      \strng{authorfullhashraw}{abecf9cb1026fca33c13923bdd991e21}
-      \strng{nameabibnamehash}{abecf9cb1026fca33c13923bdd991e21}
-      \strng{nameanamehash}{abecf9cb1026fca33c13923bdd991e21}
-      \strng{nameafullhash}{abecf9cb1026fca33c13923bdd991e21}
-      \strng{nameafullhashraw}{abecf9cb1026fca33c13923bdd991e21}
-      \field{sortinit}{5}
-      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
+      \strng{namehash}{4072de35cbd70b01dc52ec0c73455eec}
+      \strng{fullhash}{4072de35cbd70b01dc52ec0c73455eec}
+      \strng{fullhashraw}{4072de35cbd70b01dc52ec0c73455eec}
+      \strng{bibnamehash}{4072de35cbd70b01dc52ec0c73455eec}
+      \strng{authorbibnamehash}{4072de35cbd70b01dc52ec0c73455eec}
+      \strng{authornamehash}{4072de35cbd70b01dc52ec0c73455eec}
+      \strng{authorfullhash}{4072de35cbd70b01dc52ec0c73455eec}
+      \strng{authorfullhashraw}{4072de35cbd70b01dc52ec0c73455eec}
+      \strng{nameabibnamehash}{4072de35cbd70b01dc52ec0c73455eec}
+      \strng{nameanamehash}{4072de35cbd70b01dc52ec0c73455eec}
+      \strng{nameafullhash}{4072de35cbd70b01dc52ec0c73455eec}
+      \strng{nameafullhashraw}{4072de35cbd70b01dc52ec0c73455eec}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
-      \field{journaltitle}{Journal of Building Engineering}
+      \field{journaltitle}{单片机与嵌入式系统应用}
       \field{langid}{english}
-      \field{languageid}{english}
-      \field{lansortorder}{4}
-      \field{title}{IoT-Enabled Residential Gas Leakage Monitoring and Emergency Response System}
+      \field{languageid}{chinese}
+      \field{lansortorder}{1}
+      \field{number}{9}
+      \field{title}{基于STM32与ZigBee的家庭安防监测系统研究}
       \field{usera}{J}
-      \field{userd}{english}
-      \field{userf}{english}
-      \field{volume}{98}
-      \field{year}{2026}
+      \field{userd}{chinese}
+      \field{userf}{chinese}
+      \field{volume}{24}
+      \field{year}{2024}
       \field{dateera}{ce}
-      \field{pages}{111205}
-      \range{pages}{1}
-      \keyw{yusuf2026_gas_leakage}
+      \field{pages}{56\bibrangedash 61}
+      \range{pages}{6}
+      \keyw{ji2024_stm32_zigbee}
     \endentry
     \entry{dong2024_env_monitor}{article}{}{}
       \name{author}{2}{}{%
@@ -698,8 +1053,8 @@
       \strng{nameanamehash}{3d682b75eb6ac86ffc5ca5a0cc8df92b}
       \strng{nameafullhash}{3d682b75eb6ac86ffc5ca5a0cc8df92b}
       \strng{nameafullhashraw}{3d682b75eb6ac86ffc5ca5a0cc8df92b}
-      \field{sortinit}{5}
-      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{电子测量技术}
@@ -751,8 +1106,8 @@
       \strng{nameafullhash}{c38884ab3cf908c2798725960369391b}
       \strng{nameafullhashraw}{c38884ab3cf908c2798725960369391b}
       \field{extraname}{1}
-      \field{sortinit}{6}
-      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{langid}{english}
@@ -799,8 +1154,8 @@
       \strng{nameafullhash}{c38884ab3cf908c2798725960369391b}
       \strng{nameafullhashraw}{c38884ab3cf908c2798725960369391b}
       \field{extraname}{2}
-      \field{sortinit}{6}
-      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{langid}{english}
@@ -851,8 +1206,8 @@
       \strng{nameafullhash}{f480661209a4ab39f37b423457690b91}
       \strng{nameafullhashraw}{f480661209a4ab39f37b423457690b91}
       \field{extraname}{1}
-      \field{sortinit}{7}
-      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{langid}{english}
@@ -897,8 +1252,8 @@
       \strng{nameafullhash}{f480661209a4ab39f37b423457690b91}
       \strng{nameafullhashraw}{f480661209a4ab39f37b423457690b91}
       \field{extraname}{2}
-      \field{sortinit}{7}
-      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{Real Time Engineers Technical Document}
@@ -939,8 +1294,8 @@
       \strng{nameanamehash}{6ec60ab9ce327f5a12fbab109e691c73}
       \strng{nameafullhash}{6ec60ab9ce327f5a12fbab109e691c73}
       \strng{nameafullhashraw}{6ec60ab9ce327f5a12fbab109e691c73}
-      \field{sortinit}{8}
-      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{howpublished}{\url{https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/}}
@@ -1021,8 +1376,8 @@
       \strng{nameanamehash}{6888d7e611be8d0506d60f94c31a9df3}
       \strng{nameafullhash}{62d0b73c18ba223abd31321e678539e1}
       \strng{nameafullhashraw}{62d0b73c18ba223abd31321e678539e1}
-      \field{sortinit}{8}
-      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{langid}{english}
@@ -1065,8 +1420,8 @@
       \strng{nameanamehash}{ef9cb61878e61d434507444346b29d1a}
       \strng{nameafullhash}{ef9cb61878e61d434507444346b29d1a}
       \strng{nameafullhashraw}{ef9cb61878e61d434507444346b29d1a}
-      \field{sortinit}{9}
-      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{entrysubtype}{standard}
@@ -1128,8 +1483,8 @@
       \strng{nameanamehash}{674a4cd28d5b6d04a678051a45cd4e2e}
       \strng{nameafullhash}{674a4cd28d5b6d04a678051a45cd4e2e}
       \strng{nameafullhashraw}{674a4cd28d5b6d04a678051a45cd4e2e}
-      \field{sortinit}{9}
-      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{langid}{english}
@@ -1180,8 +1535,8 @@
       \strng{nameanamehash}{fbed942ce41bbd27cb1ee6a803bdf541}
       \strng{nameafullhash}{fbed942ce41bbd27cb1ee6a803bdf541}
       \strng{nameafullhashraw}{fbed942ce41bbd27cb1ee6a803bdf541}
-      \field{sortinit}{9}
-      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{langid}{english}
@@ -1228,8 +1583,8 @@
       \strng{nameanamehash}{db483dc00fdb45eefc293f011db1b4b4}
       \strng{nameafullhash}{db483dc00fdb45eefc293f011db1b4b4}
       \strng{nameafullhashraw}{db483dc00fdb45eefc293f011db1b4b4}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{langid}{english}
@@ -1269,8 +1624,8 @@
       \strng{nameanamehash}{62f01921695c93445ca4515e68f83cf0}
       \strng{nameafullhash}{62f01921695c93445ca4515e68f83cf0}
       \strng{nameafullhashraw}{62f01921695c93445ca4515e68f83cf0}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{Technical Datasheet}
@@ -1284,48 +1639,6 @@
       \field{year}{2018}
       \field{dateera}{ce}
       \keyw{hcsr501_datasheet}
-    \endentry
-    \entry{dht22_datasheet}{article}{}{}
-      \name{author}{1}{}{%
-        {{hash=f9dcdbddc9ae0afa94b16b923c1c3f47}{%
-           family={{Aosong Electronics}},
-           familyi={A\bibinitperiod}}}%
-      }
-      \name{namea}{1}{}{%
-        {{hash=f9dcdbddc9ae0afa94b16b923c1c3f47}{%
-           family={{Aosong Electronics}},
-           familyi={A\bibinitperiod}}}%
-      }
-      \list{language}{1}{%
-        {english}%
-      }
-      \strng{namehash}{f9dcdbddc9ae0afa94b16b923c1c3f47}
-      \strng{fullhash}{f9dcdbddc9ae0afa94b16b923c1c3f47}
-      \strng{fullhashraw}{f9dcdbddc9ae0afa94b16b923c1c3f47}
-      \strng{bibnamehash}{f9dcdbddc9ae0afa94b16b923c1c3f47}
-      \strng{authorbibnamehash}{f9dcdbddc9ae0afa94b16b923c1c3f47}
-      \strng{authornamehash}{f9dcdbddc9ae0afa94b16b923c1c3f47}
-      \strng{authorfullhash}{f9dcdbddc9ae0afa94b16b923c1c3f47}
-      \strng{authorfullhashraw}{f9dcdbddc9ae0afa94b16b923c1c3f47}
-      \strng{nameabibnamehash}{f9dcdbddc9ae0afa94b16b923c1c3f47}
-      \strng{nameanamehash}{f9dcdbddc9ae0afa94b16b923c1c3f47}
-      \strng{nameafullhash}{f9dcdbddc9ae0afa94b16b923c1c3f47}
-      \strng{nameafullhashraw}{f9dcdbddc9ae0afa94b16b923c1c3f47}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{journaltitle}{Technical Datasheet}
-      \field{langid}{english}
-      \field{languageid}{english}
-      \field{lansortorder}{4}
-      \field{title}{DHT22 Digital Temperature and Humidity Sensor Datasheet}
-      \field{usera}{J}
-      \field{userd}{english}
-      \field{userf}{english}
-      \field{year}{2020}
-      \field{dateera}{ce}
-      \keyw{dht22_datasheet}
     \endentry
     \entry{mq2_datasheet}{article}{}{}
       \name{author}{1}{}{%
@@ -1354,8 +1667,8 @@
       \strng{nameafullhash}{f9962dff5f4de6a0f9796db6330f0a78}
       \strng{nameafullhashraw}{f9962dff5f4de6a0f9796db6330f0a78}
       \field{extraname}{1}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{Technical Datasheet}
@@ -1402,8 +1715,8 @@
       \strng{nameanamehash}{cab32ac1805656c0d03162da7fb63957}
       \strng{nameafullhash}{cab32ac1805656c0d03162da7fb63957}
       \strng{nameafullhashraw}{cab32ac1805656c0d03162da7fb63957}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{langid}{english}
@@ -1416,53 +1729,6 @@
       \field{year}{2006}
       \field{dateera}{ce}
       \keyw{ov7670_datasheet}
-    \endentry
-    \entry{dht_calib_source}{manual}{}{}
-      \name{author}{1}{}{%
-        {{hash=78d9ad08f9f14a2f4a55414c0bb04bea}{%
-           family={{Rotronic}},
-           familyi={R\bibinitperiod}}}%
-      }
-      \name{namea}{1}{}{%
-        {{hash=78d9ad08f9f14a2f4a55414c0bb04bea}{%
-           family={{Rotronic}},
-           familyi={R\bibinitperiod}}}%
-      }
-      \list{institution}{1}{%
-        {Rotronic}%
-      }
-      \list{language}{1}{%
-        {english}%
-      }
-      \list{organization}{1}{%
-        {Rotronic}%
-      }
-      \strng{namehash}{78d9ad08f9f14a2f4a55414c0bb04bea}
-      \strng{fullhash}{78d9ad08f9f14a2f4a55414c0bb04bea}
-      \strng{fullhashraw}{78d9ad08f9f14a2f4a55414c0bb04bea}
-      \strng{bibnamehash}{78d9ad08f9f14a2f4a55414c0bb04bea}
-      \strng{authorbibnamehash}{78d9ad08f9f14a2f4a55414c0bb04bea}
-      \strng{authornamehash}{78d9ad08f9f14a2f4a55414c0bb04bea}
-      \strng{authorfullhash}{78d9ad08f9f14a2f4a55414c0bb04bea}
-      \strng{authorfullhashraw}{78d9ad08f9f14a2f4a55414c0bb04bea}
-      \strng{nameabibnamehash}{78d9ad08f9f14a2f4a55414c0bb04bea}
-      \strng{nameanamehash}{78d9ad08f9f14a2f4a55414c0bb04bea}
-      \strng{nameafullhash}{78d9ad08f9f14a2f4a55414c0bb04bea}
-      \strng{nameafullhashraw}{78d9ad08f9f14a2f4a55414c0bb04bea}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{langid}{english}
-      \field{languageid}{english}
-      \field{lansortorder}{4}
-      \field{title}{HC2-S HygroClip2 Probe Specification}
-      \field{usera}{A}
-      \field{userd}{english}
-      \field{userf}{english}
-      \field{year}{2024}
-      \field{dateera}{ce}
-      \keyw{dht_calib_source}
     \endentry
     \entry{mq2_calib_source}{manual}{}{}
       \name{author}{1}{}{%
@@ -1497,8 +1763,8 @@
       \strng{nameafullhash}{f9962dff5f4de6a0f9796db6330f0a78}
       \strng{nameafullhashraw}{f9962dff5f4de6a0f9796db6330f0a78}
       \field{extraname}{2}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{langid}{english}
@@ -1544,8 +1810,8 @@
       \strng{nameanamehash}{66589871a3c3f27bcbf3891133af42b1}
       \strng{nameafullhash}{66589871a3c3f27bcbf3891133af42b1}
       \strng{nameafullhashraw}{66589871a3c3f27bcbf3891133af42b1}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{langid}{english}
@@ -1558,86 +1824,6 @@
       \field{year}{2022}
       \field{dateera}{ce}
       \keyw{esp8266_at}
-    \endentry
-    \entry{mqtt_iot_review}{article}{}{}
-      \name{author}{4}{}{%
-        {{hash=2abccb28689217aa71c48352eec29f0f}{%
-           family={Farooq},
-           familyi={F\bibinitperiod},
-           given={Ugo},
-           giveni={U\bibinitperiod}}}%
-        {{hash=fefe714ab361ff61847e7fd8835d1cde}{%
-           family={Waseem},
-           familyi={W\bibinitperiod},
-           given={M.},
-           giveni={M\bibinitperiod}}}%
-        {{hash=bf417dbb62e7a1140d1f739c6998e661}{%
-           family={Khairi},
-           familyi={K\bibinitperiod},
-           given={Sadia},
-           giveni={S\bibinitperiod}}}%
-        {{hash=22abab8ee24e6fafccd1f62cdb3175b1}{%
-           family={Mazhar},
-           familyi={M\bibinitperiod},
-           given={Talha},
-           giveni={T\bibinitperiod}}}%
-      }
-      \name{namea}{4}{}{%
-        {{hash=2abccb28689217aa71c48352eec29f0f}{%
-           family={Farooq},
-           familyi={F\bibinitperiod},
-           given={Ugo},
-           giveni={U\bibinitperiod}}}%
-        {{hash=fefe714ab361ff61847e7fd8835d1cde}{%
-           family={Waseem},
-           familyi={W\bibinitperiod},
-           given={M.},
-           giveni={M\bibinitperiod}}}%
-        {{hash=bf417dbb62e7a1140d1f739c6998e661}{%
-           family={Khairi},
-           familyi={K\bibinitperiod},
-           given={Sadia},
-           giveni={S\bibinitperiod}}}%
-        {{hash=22abab8ee24e6fafccd1f62cdb3175b1}{%
-           family={Mazhar},
-           familyi={M\bibinitperiod},
-           given={Talha},
-           giveni={T\bibinitperiod}}}%
-      }
-      \list{language}{1}{%
-        {english}%
-      }
-      \strng{namehash}{7e984f3bb0eb090f4a46789349105295}
-      \strng{fullhash}{5c52a42320c5bcf0f06cd21298bd1d35}
-      \strng{fullhashraw}{5c52a42320c5bcf0f06cd21298bd1d35}
-      \strng{bibnamehash}{7e984f3bb0eb090f4a46789349105295}
-      \strng{authorbibnamehash}{7e984f3bb0eb090f4a46789349105295}
-      \strng{authornamehash}{7e984f3bb0eb090f4a46789349105295}
-      \strng{authorfullhash}{5c52a42320c5bcf0f06cd21298bd1d35}
-      \strng{authorfullhashraw}{5c52a42320c5bcf0f06cd21298bd1d35}
-      \strng{nameabibnamehash}{7e984f3bb0eb090f4a46789349105295}
-      \strng{nameanamehash}{7e984f3bb0eb090f4a46789349105295}
-      \strng{nameafullhash}{5c52a42320c5bcf0f06cd21298bd1d35}
-      \strng{nameafullhashraw}{5c52a42320c5bcf0f06cd21298bd1d35}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{journaltitle}{International Journal of Computer Applications}
-      \field{langid}{english}
-      \field{languageid}{english}
-      \field{lansortorder}{4}
-      \field{number}{7}
-      \field{title}{A Critical Analysis on the Security Concerns of Internet of Things (IoT)}
-      \field{usera}{J}
-      \field{userd}{english}
-      \field{userf}{english}
-      \field{volume}{111}
-      \field{year}{2015}
-      \field{dateera}{ce}
-      \field{pages}{1\bibrangedash 6}
-      \range{pages}{6}
-      \keyw{mqtt_iot_review}
     \endentry
   \enddatalist
 \endrefsection
