@@ -37,6 +37,7 @@ volatile u8 ReInputEn = 0;
 u8 security_mode = 0;
 u8 security_alarm = 0;
 u8 ui_busy = 0;
+arm_mode_t arm_mode = ARM_MODE_DISARM;
 
 u8 dht11_temp = 0;
 u8 dht11_humi = 0;
@@ -56,7 +57,7 @@ extern volatile u32 g_net_offline_count;
 extern volatile u16 g_cap_replay_count;
 extern volatile u16 g_cap_sd_write_fail_count;
 volatile unsigned char g_as608_user_abort = 0u;
-static volatile u32 g_false_alarm_count = 0u;
+volatile u32 g_false_alarm_count = 0u;
 static volatile u32 g_runtime_exception_count = 0u;
 
 void AS608_PollYield(void)
@@ -91,6 +92,13 @@ u8 Find(char *a)
 void Security_Set_Mode(u8 armed)
 {
     security_mode = armed ? 1u : 0u;
+    arm_mode = armed ? ARM_MODE_AWAY : ARM_MODE_DISARM;
+}
+
+void Security_Set_ArmMode(arm_mode_t mode)
+{
+    arm_mode = mode;
+    security_mode = (mode != ARM_MODE_DISARM) ? 1u : 0u;
 }
 
 void ESP8266_CooperativeYield(void)
@@ -164,6 +172,7 @@ static void app_poll_sensors(void)
     static u32 s_dht_ms = 0;
     static u32 s_mq2_ms = 0;
     static u32 s_pir_quiet_until = 0u;
+    static u32 s_pir_low_since = 0u;
     static u8 s_dht_was_ok = 1u;
     static u8 s_dht_fail_streak = 0u;
     static u8 s_dht_ok_streak = 0u;
@@ -290,7 +299,8 @@ static void app_poll_sensors(void)
     if(HC_SR501_IRQHandler_GetFlag())
     {
         HC_SR501_IRQHandler_ClearFlag();
-        if(!security_mode)
+        s_pir_low_since = 0u;
+        if(arm_mode == ARM_MODE_DISARM)
         {
             g_false_alarm_count++;
             SysLog_Add(LOG_EVT_CONFIG, "PIR_FALSE_ALARM");
@@ -308,7 +318,16 @@ static void app_poll_sensors(void)
     }
     else if(!HC_SR501_Poll_Triggered())
     {
-        g_sensor.pir_alarm = 0u;
+        if(g_sensor.pir_alarm)
+        {
+            if(s_pir_low_since == 0u)
+                s_pir_low_since = now;
+            if((u32)(now - s_pir_low_since) >= (u32)APP_PIR_CLEAR_LOW_MS)
+            {
+                g_sensor.pir_alarm = 0u;
+                s_pir_low_since = 0u;
+            }
+        }
     }
 }
 
@@ -349,28 +368,69 @@ static void app_export_stats(void)
 static void app_poll_alarm_and_act(void)
 {
     alarm_type_t alarm = ALARM_NONE;
+    static u32 s_brute_beep_until = 0u;
+    u32 now = Bare_GetTickMs();
 
-    if(security_mode && g_sensor.pir_alarm) alarm = ALARM_PIR;
+    /* PIR: HOME=本地蜂鸣+OLED, AWAY=联动+抓拍+云端 */
+    if(security_mode && g_sensor.pir_alarm)
+    {
+        alarm = ALARM_PIR;
+    }
     if(BOARD_MQ2_ALARM_ENABLE && g_sensor.mq2_alarm)
         alarm = (alarm == ALARM_PIR) ? ALARM_BOTH : ALARM_GAS;
 
-    security_alarm = (alarm != ALARM_NONE) ? 1u : 0u;
+    /* 暴力破解告警：强制 AWAY 模式 + 蜂鸣 + OneNET 告警 */
+    if(LockManager_IsBruteAlarm())
+    {
+        Security_Set_ArmMode(ARM_MODE_AWAY);
+        s_brute_beep_until = now + (u32)APP_BRUTE_BEEP_MS;
+    }
+    if((u32)(now - s_brute_beep_until) < (u32)APP_BRUTE_BEEP_MS)
+        BEEP_SoundOn();
+
+    /* security_alarm: HOME 模式 PIR 不上报云端 */
+    {
+        u8 cloud_alarm = 0u;
+        if(security_mode && g_sensor.pir_alarm && arm_mode == ARM_MODE_AWAY)
+            cloud_alarm = 1u;
+        if(BOARD_MQ2_ALARM_ENABLE && g_sensor.mq2_alarm)
+            cloud_alarm = 1u;
+        security_alarm = cloud_alarm;
+    }
 
     if(alarm != ALARM_NONE)
     {
-        BEEP_SoundOn();
-        if(alarm == ALARM_PIR || alarm == ALARM_BOTH)
-            Linkage_OnIntrusion();
-        if(alarm == ALARM_GAS || alarm == ALARM_BOTH)
-            Linkage_OnMQ2_Alarm();
+        u8 is_pir = (alarm == ALARM_PIR || alarm == ALARM_BOTH);
+        u8 is_gas = (alarm == ALARM_GAS || alarm == ALARM_BOTH);
+
+        if(is_pir)
+        {
+            if(arm_mode == ARM_MODE_HOME)
+            {
+                /* HOME 模式：仅本地蜂鸣+OLED，不上传云端/不联动/不抓拍 */
+                BEEP_SoundOn();
+            }
+            else
+            {
+                /* AWAY 模式：完整入侵联动+抓拍+云端告警 */
+                BEEP_SoundOn();
+                Linkage_OnIntrusion();
 #if EN_OV7670_LOCAL
-        if(alarm == ALARM_PIR || alarm == ALARM_BOTH)
-            Capture_Request(CAP_EVT_INTRUSION);
+                Capture_Request(CAP_EVT_INTRUSION);
 #endif
+                SysLog_Add(LOG_EVT_ALARM, "PIR_INTRUSION");
+            }
+        }
+        if(is_gas)
+        {
+            BEEP_SoundOn();
+            Linkage_OnMQ2_Alarm();
+        }
     }
     else
     {
-        BEEP_SoundOff();
+        if(!LockManager_IsBruteAlarm())
+            BEEP_SoundOff();
     }
 
     OLED_View_ShowAlarm(alarm);

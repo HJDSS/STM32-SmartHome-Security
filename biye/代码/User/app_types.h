@@ -12,6 +12,13 @@ typedef enum
 
 typedef enum
 {
+    ARM_MODE_DISARM = 0,
+    ARM_MODE_HOME   = 1,
+    ARM_MODE_AWAY   = 2
+} arm_mode_t;
+
+typedef enum
+{
     ALARM_NONE = 0,
     ALARM_PIR = 1,
     ALARM_GAS = 2,
@@ -46,6 +53,8 @@ typedef struct
     u32 admin_until_ms;
     u8 pwd_chg_state;
     u8 enroll_pending;
+    u8 brute_alarm;
+    u8 brute_alarm_sent;
 } lock_state_t;
 
 typedef struct

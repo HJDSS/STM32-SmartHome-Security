@@ -31,6 +31,34 @@
 #ifndef APP_PIR_SUPPRESS_MS
 #define APP_PIR_SUPPRESS_MS        3000u
 #endif
+#ifndef APP_PIR_CLEAR_LOW_MS
+#define APP_PIR_CLEAR_LOW_MS       350u
+#endif
+#ifndef APP_PIR_MIN_ACTIVE_MS
+#define APP_PIR_MIN_ACTIVE_MS      200u
+#endif
+
+#ifndef APP_LOCK_MAX_FAIL
+#define APP_LOCK_MAX_FAIL          3u
+#endif
+#ifndef APP_LOCK_BRUTE_MAX
+#define APP_LOCK_BRUTE_MAX         5u
+#endif
+#ifndef APP_LOCK_LOCKOUT_MS
+#define APP_LOCK_LOCKOUT_MS        30000u
+#endif
+#ifndef APP_BRUTE_BEEP_MS
+#define APP_BRUTE_BEEP_MS          3000u
+#endif
+#ifndef APP_ADMIN_SESSION_MS
+#define APP_ADMIN_SESSION_MS       20000u  /* 管理员窗口默认 20s */
+#endif
+#ifndef APP_ADMIN_SESSION_MAX_MS
+#define APP_ADMIN_SESSION_MAX_MS   60000u  /* 录入/改密期间延长至 60s */
+#endif
+#ifndef APP_LOCK_OPEN_HOLD_MS
+#define APP_LOCK_OPEN_HOLD_MS      3000u
+#endif
 
 #ifndef APP_STAT_REPORT_MS
 #define APP_STAT_REPORT_MS         30000u

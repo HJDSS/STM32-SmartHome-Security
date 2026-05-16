@@ -65,8 +65,11 @@ extern u8 security_alarm;
 extern u8 dht11_temp;
 extern u8 dht11_humi;
 extern u16 mq2_adc_value;
+extern arm_mode_t arm_mode;
+extern volatile u32 g_false_alarm_count;
 
 extern void CLR_Buf2(void);
+extern void Security_Set_ArmMode(arm_mode_t mode);
 
 static void Task_Lock(void *arg)
 {
@@ -86,6 +89,9 @@ static void Task_Sensor(void *arg)
     uint32_t last_dht = 0;
     uint32_t last_mq2 = 0;
     static u8 s_mq2_was_alarm = 0u;
+    static uint32_t s_pir_quiet_until = 0u;
+    static uint32_t s_pir_low_since = 0u;
+    static uint32_t s_brute_beep_until = 0u;
 
     for (;;)
     {
@@ -131,14 +137,99 @@ static void Task_Sensor(void *arg)
             s_mq2_was_alarm = g_sensor.mq2_alarm;
         }
 
+        /* PIR 检测 */
         if (HC_SR501_IRQHandler_GetFlag())
         {
             HC_SR501_IRQHandler_ClearFlag();
-            g_sensor.pir_alarm = 1u;
+            s_pir_low_since = 0u;
+            if (arm_mode == ARM_MODE_DISARM)
+            {
+                g_false_alarm_count++;
+                s_pir_quiet_until = now + pdMS_TO_TICKS(APP_PIR_SUPPRESS_MS);
+            }
+            if ((int32_t)(now - s_pir_quiet_until) >= 0)
+            {
+                g_sensor.pir_alarm = 1u;
+            }
+            else
+            {
+                s_pir_quiet_until = now + pdMS_TO_TICKS(APP_PIR_SUPPRESS_MS);
+            }
         }
         else if (!HC_SR501_Poll_Triggered())
         {
-            g_sensor.pir_alarm = 0u;
+            if (g_sensor.pir_alarm)
+            {
+                if (s_pir_low_since == 0u)
+                    s_pir_low_since = now;
+                if ((uint32_t)(now - s_pir_low_since) >= pdMS_TO_TICKS(APP_PIR_CLEAR_LOW_MS))
+                {
+                    g_sensor.pir_alarm = 0u;
+                    s_pir_low_since = 0u;
+                }
+            }
+        }
+
+        /* 告警与执行器处理 */
+        {
+            alarm_type_t alarm = ALARM_NONE;
+
+            if (security_mode && g_sensor.pir_alarm) alarm = ALARM_PIR;
+            if (BOARD_MQ2_ALARM_ENABLE && g_sensor.mq2_alarm)
+                alarm = (alarm == ALARM_PIR) ? ALARM_BOTH : ALARM_GAS;
+
+            if (LockManager_IsBruteAlarm())
+            {
+                Security_Set_ArmMode(ARM_MODE_AWAY);
+                s_brute_beep_until = now + pdMS_TO_TICKS(APP_BRUTE_BEEP_MS);
+            }
+            if ((uint32_t)(now - s_brute_beep_until) < pdMS_TO_TICKS(APP_BRUTE_BEEP_MS))
+                BEEP_SoundOn();
+
+            /* security_alarm: HOME 模式 PIR 不上报云端 */
+            {
+                u8 cloud_alarm = 0u;
+                if(security_mode && g_sensor.pir_alarm && arm_mode == ARM_MODE_AWAY)
+                    cloud_alarm = 1u;
+                if(BOARD_MQ2_ALARM_ENABLE && g_sensor.mq2_alarm)
+                    cloud_alarm = 1u;
+                security_alarm = cloud_alarm;
+            }
+
+            if (alarm != ALARM_NONE)
+            {
+                u8 is_pir = (alarm == ALARM_PIR || alarm == ALARM_BOTH);
+                u8 is_gas = (alarm == ALARM_GAS || alarm == ALARM_BOTH);
+
+                if (is_pir)
+                {
+                    if (arm_mode == ARM_MODE_HOME)
+                    {
+                        BEEP_SoundOn();
+                    }
+                    else
+                    {
+                        BEEP_SoundOn();
+                        Linkage_OnIntrusion();
+#if EN_OV7670_LOCAL
+                        Capture_Request(CAP_EVT_INTRUSION);
+#endif
+                        SysLog_Add(LOG_EVT_ALARM, "PIR_INTRUSION");
+                    }
+                }
+                if (is_gas)
+                {
+                    BEEP_SoundOn();
+                    Linkage_OnMQ2_Alarm();
+                }
+            }
+            else
+            {
+                if (!LockManager_IsBruteAlarm())
+                    BEEP_SoundOff();
+            }
+
+            OLED_View_ShowAlarm(alarm);
         }
 
         WDG_Mark(WDG_SRC_SENSOR);
