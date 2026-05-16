@@ -72,8 +72,12 @@ static void erase_page_if_needed(u16 slot)
 		u32 addr = slot_addr(slot);
 		u32 page = (addr - SYSLOG_FLASH_BASE) / SYSLOG_PAGE_SIZE;
 		u32 page_base = SYSLOG_FLASH_BASE + page * SYSLOG_PAGE_SIZE;
+		u16 slot_in_page = (u16)((addr - page_base) / SYSLOG_SLOT_SIZE);
 
-		/* 如果该页首字不是0xFFFF，视为已写入过，准备覆盖时先擦页 */
+		/* 仅页内第一个槽位时擦除整页，同页后续槽位顺序写入 */
+		if(slot_in_page != 0u)
+				return;
+
 		if(STMFLASH_ReadHalfWord(page_base) != 0xFFFF)
 		{
 				FLASH_Unlock();
