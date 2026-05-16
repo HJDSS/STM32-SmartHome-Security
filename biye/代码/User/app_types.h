@@ -43,6 +43,9 @@ typedef struct
     u8 pwd_failed_count;
     u8 pwd_locked;
     u32 pwd_lock_until_ms;
+    u32 admin_until_ms;
+    u8 pwd_chg_state;
+    u8 enroll_pending;
 } lock_state_t;
 
 typedef struct

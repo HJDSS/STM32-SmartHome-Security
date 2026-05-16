@@ -1,0 +1,5 @@
+PORT_SNAPSHOT=2026-05-15
+GIT_BASELINE=d4a60700343d6d53a27b0bf8e4b2ddb2681348b3
+AGENT_EXPORT=exported_agent_chats_20260423_20260425/manifest.json
+APR23_M11=c069ee95
+INTEGRATION_NOTE=oled_view.c oled_show_safe_line + Apr25 UI strings (chat a71aed43); full tree zip releases/biye_代码_port_20260515.zip

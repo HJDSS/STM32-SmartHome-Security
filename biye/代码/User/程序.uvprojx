@@ -337,7 +337,7 @@
               <MiscControls></MiscControls>
               <Define>STM32F103RC,STM32F10X_HD,USE_STDPERIPH_DRIVER,EN_FATFS_SD,EN_ONENET</Define>
               <Undefine></Undefine>
-              <IncludePath>..\CMSIS;..\System\delay;..\System\sys;..\System\usart;..\System\bare_task_sched;..\System\osal_evt;..\User;..\Libraries\inc;..\Driver</IncludePath>
+              <IncludePath>..\CMSIS;..\System\delay;..\System\sys;..\System\usart;..\System\bare_task_sched;..\System\osal_evt;..\Middlewares\FreeRTOSV9\Source\include;..\Middlewares\FreeRTOSV9\Source\portable\RVDS\ARM_CM3;..\User;..\Libraries\inc;..\Driver</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -682,6 +682,16 @@
               <FilePath>.\lock_manager.c</FilePath>
             </File>
             <File>
+              <FileName>wdg.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\wdg.h</FilePath>
+            </File>
+            <File>
+              <FileName>wdg.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\wdg.c</FilePath>
+            </File>
+            <File>
               <FileName>capture_task.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\capture_task.c</FilePath>
@@ -720,6 +730,11 @@
               <FileName>sd_capacity.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\sd_capacity.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_rtos.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app_rtos.c</FilePath>
             </File>
             <File>
               <FileName>main.c</FileName>
@@ -770,6 +785,46 @@
               <FileName>osal_evt.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\SYSTEM\osal_evt\osal_evt.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>FREERTOS</GroupName>
+          <Files>
+            <File>
+              <FileName>tasks.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middlewares\FreeRTOSV9\Source\tasks.c</FilePath>
+            </File>
+            <File>
+              <FileName>queue.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middlewares\FreeRTOSV9\Source\queue.c</FilePath>
+            </File>
+            <File>
+              <FileName>list.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middlewares\FreeRTOSV9\Source\list.c</FilePath>
+            </File>
+            <File>
+              <FileName>port.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middlewares\FreeRTOSV9\Source\portable\RVDS\ARM_CM3\port.c</FilePath>
+            </File>
+            <File>
+              <FileName>heap_4.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middlewares\FreeRTOSV9\Source\portable\MemMang\heap_4.c</FilePath>
+            </File>
+            <File>
+              <FileName>timers.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middlewares\FreeRTOSV9\Source\timers.c</FilePath>
+            </File>
+            <File>
+              <FileName>event_groups.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middlewares\FreeRTOSV9\Source\event_groups.c</FilePath>
             </File>
           </Files>
         </Group>

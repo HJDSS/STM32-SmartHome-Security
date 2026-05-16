@@ -6,7 +6,7 @@
 
 extern volatile u8 g_capture_busy;
 
-/* 主循环调用：OV7670+FIFO -> SD(BMP) */
 void Bare_CapturePoll(void);
+u8 Capture_LocalSnapshot(void);
 
 #endif

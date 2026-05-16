@@ -11,5 +11,6 @@ void OLED_View_OnPasswordCancel(void);
 void OLED_View_OnPasswordTimeout(void);
 void OLED_View_ShowAlarm(alarm_type_t alarm);
 void OLED_View_ShowNetState(u8 wifi_ok, u8 hb_ok);
+void OLED_View_ToastRowAB(const char *line16, u32 duration_ms);
 
 #endif

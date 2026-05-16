@@ -3,6 +3,11 @@
 
 #include "sys.h"
 
+/* 1=启用 FreeRTOS 任务调度；0=裸机 super-loop */
+#ifndef USE_FREERTOS
+#define USE_FREERTOS 1
+#endif
+
 /*
  * =============================================================================
  * 目标芯片：STM32F103RCT6（LQFP64，Cortex-M3 @72MHz）
@@ -15,7 +20,11 @@
 
 /* ================= 功能总开关（保持原工程） ================= */
 #ifndef NO_FREERTOS_MODE
-#define NO_FREERTOS_MODE    1       /* 固定为 1：裸机轮询（摄像头/联网等在主循环内调度） */
+#define NO_FREERTOS_MODE    0       /* USE_FREERTOS=1 时为 0；保持兼容旧宏 */
+#endif
+#if USE_FREERTOS
+#undef NO_FREERTOS_MODE
+#define NO_FREERTOS_MODE 0
 #endif
 /* DEBUG_KEYBOARD_ONLY=1：仅 OLED+蜂鸣器+键盘；DEBUG_PASSWORD_ONLY=1：加密码+指纹，无 WiFi/MQ2/DHT/PIR/OV 等；二者与全功能互斥 */
 #ifndef DEBUG_KEYBOARD_ONLY
@@ -96,6 +105,17 @@
 #endif
 #define EN_OV7670           EN_OV7670_LOCAL
 
+/* OV7670 抓拍：帧间延时、固定文件名（论文/演示用） */
+#ifndef BOARD_OV7670_FRAME_GAP_MS
+#define BOARD_OV7670_FRAME_GAP_MS       0u
+#endif
+#ifndef BOARD_CAP_LOCAL_FIXED_NAME_ENABLE
+#define BOARD_CAP_LOCAL_FIXED_NAME_ENABLE  0
+#endif
+#ifndef BOARD_CAP_LOCAL_FIXED_BMP_NAME
+#define BOARD_CAP_LOCAL_FIXED_BMP_NAME  "0:CAP_LAST.BMP"
+#endif
+
 /* SD 调试详细信息（E/R1/引脚电平/写阶段等）：1=显示，0=仅显示简洁 OK/ERR */
 #ifndef SD_DEBUG_VERBOSE
 #define SD_DEBUG_VERBOSE    1
@@ -143,9 +163,9 @@
 #define BOARD_AS608_PS_STA_PIN          GPIO_Pin_8
 #define BOARD_AS608_PS_STA_CLK          RCC_APB2Periph_GPIOA
 
-/* AS608 识别速度：原 uart_recv 会傻等满超时(如400ms)才返回，改为“字节流静止”提前结束一帧 */
+/* AS608 识别速度：原 uart_recv 会傻等满超时(如400ms)才返回，改为"字节流静止"提前结束一帧 */
 #ifndef AS608_UART_RECV_TIMEOUT_MS
-#define AS608_UART_RECV_TIMEOUT_MS      150u  /* 单条指令兜底上限(ms)；正常通常 <50ms */
+#define AS608_UART_RECV_TIMEOUT_MS      800u  /* 单条指令兜底上限(ms)；正常通常 <50ms */
 #endif
 #ifndef AS608_FIND_IMG_GAP_MS
 #define AS608_FIND_IMG_GAP_MS           12u   /* GetImage→GenChar 间隔，手册一般≥10ms */
@@ -314,7 +334,7 @@
 #endif
 /* 逻辑坐标相对 GRAM 右移列数：默认 0；若最左一整格被塑料挡掉可试 8u */
 #ifndef OLED_GRAM_X_SHIFT
-#define OLED_GRAM_X_SHIFT             0u
+#define OLED_GRAM_X_SHIFT             8u
 #endif
 
 /* 上电是否自动显示 OLED 屏型/首列自检图案 */
@@ -447,48 +467,40 @@
 
 /* =============================================================================
  * [M1 增补] 后续模块预留宏（M2 IWDG / M3 FreeRTOS 任务 / M4~M9 算法参数）
- * -----------------------------------------------------------------------------
- * 说明：本段宏在 M1 阶段"只声明不使用"，后续 M2/M3/... 模块落地时再引用生效。
- * 保持 #ifndef 保护，允许各模块 .c 内临时覆盖。不改变任何现有代码行为。
  * =============================================================================
  */
 
 /* ---------- M2 IWDG 独立看门狗 ---------- */
-/* 1=启用 IWDG 硬件看门狗；0=关闭（仅调试期或 JTAG 断电烧录时临时关） */
 #ifndef BOARD_IWDG_ENABLE
 #define BOARD_IWDG_ENABLE               1
 #endif
-/* IWDG 复位周期(ms)：LSI 40kHz、预分频 64、Reload≈1250 → 约 2000ms */
 #ifndef BOARD_IWDG_TIMEOUT_MS
-#define BOARD_IWDG_TIMEOUT_MS           2000u
+#define BOARD_IWDG_TIMEOUT_MS           10000u
 #endif
-/* 需要按时喂狗的"活标志位"源数量（M3 系统监测任务聚合后统一 IWDG_Feed） */
 #ifndef BOARD_IWDG_WATCH_SRC_MAX
-#define BOARD_IWDG_WATCH_SRC_MAX        8u
+#define BOARD_IWDG_WATCH_SRC_MAX        8
 #endif
 
 /* ---------- M3 FreeRTOS 任务表（论文表 5-x 对齐） ---------- */
-/* 任务优先级：数值越大越高；上限为 FreeRTOSConfig 的 configMAX_PRIORITIES(=8) - 1 = 7 */
 #ifndef APP_TASK_PRIO_SECURITY
-#define APP_TASK_PRIO_SECURITY          5u      /* 安防告警（硬实时，事件+周期） */
+#define APP_TASK_PRIO_SECURITY          5u
 #endif
 #ifndef APP_TASK_PRIO_NET
-#define APP_TASK_PRIO_NET               4u      /* 网络通信 */
+#define APP_TASK_PRIO_NET               4u
 #endif
 #ifndef APP_TASK_PRIO_FINGER
-#define APP_TASK_PRIO_FINGER            3u      /* 指纹识别 */
+#define APP_TASK_PRIO_FINGER            3u
 #endif
 #ifndef APP_TASK_PRIO_SENSOR
-#define APP_TASK_PRIO_SENSOR            3u      /* 传感采集 */
+#define APP_TASK_PRIO_SENSOR            3u
 #endif
 #ifndef APP_TASK_PRIO_CAPTURE
-#define APP_TASK_PRIO_CAPTURE           2u      /* 图像抓拍 */
+#define APP_TASK_PRIO_CAPTURE           2u
 #endif
 #ifndef APP_TASK_PRIO_SYSMON
-#define APP_TASK_PRIO_SYSMON            1u      /* 系统监测 */
+#define APP_TASK_PRIO_SYSMON            1u
 #endif
 
-/* 任务栈深(FreeRTOS StackDepth 单位=Word=4 字节) */
 #ifndef APP_TASK_STACK_SECURITY
 #define APP_TASK_STACK_SECURITY         512u
 #endif
@@ -508,7 +520,6 @@
 #define APP_TASK_STACK_SYSMON           320u
 #endif
 
-/* 任务周期(ms)；事件触发型任务 = 0 表示仅阻塞等事件 */
 #ifndef APP_TASK_PERIOD_SECURITY_MS
 #define APP_TASK_PERIOD_SECURITY_MS     50u
 #endif
@@ -525,7 +536,6 @@
 #define APP_TASK_PERIOD_SYSMON_MS       2000u
 #endif
 
-/* 任务间通信深度（M3 按需创建：队列/事件组） */
 #ifndef APP_IPC_ALARM_Q_DEPTH
 #define APP_IPC_ALARM_Q_DEPTH           8u
 #endif
@@ -536,15 +546,15 @@
 #define APP_IPC_CMD_Q_DEPTH             6u
 #endif
 
-/* ---------- M4 PIR 三段式误触发抑制（毛刺 + 最小持续 + 锁定） ---------- */
+/* ---------- M4 PIR 三段式误触发抑制 ---------- */
 #ifndef APP_PIR_GLITCH_REJECT_MS
-#define APP_PIR_GLITCH_REJECT_MS        60u     /* < 60ms 窄脉冲直接丢弃 */
+#define APP_PIR_GLITCH_REJECT_MS        60u
 #endif
 #ifndef APP_PIR_MIN_ACTIVE_MS
-#define APP_PIR_MIN_ACTIVE_MS           200u    /* ≥ 200ms 持续才视为真触发 */
+#define APP_PIR_MIN_ACTIVE_MS           200u
 #endif
 #ifndef APP_PIR_LOCKOUT_MS
-#define APP_PIR_LOCKOUT_MS              3000u   /* 单次触发后锁定窗口（复用原 SUPPRESS） */
+#define APP_PIR_LOCKOUT_MS              3000u
 #endif
 
 /* ---------- M5 DHT11/22 最小二乘法校准系数（论文 §3-2 固化 Q15 定点） ---------- */
@@ -552,49 +562,50 @@
 #define APP_DHT_CALIB_ENABLE            1
 #endif
 #ifndef APP_DHT_CALIB_AT_Q15
-#define APP_DHT_CALIB_AT_Q15            32148   /* round(0.9812 * 32768) */
+#define APP_DHT_CALIB_AT_Q15            32148
 #endif
 #ifndef APP_DHT_CALIB_BT_Q15
-#define APP_DHT_CALIB_BT_Q15            9982    /* round(0.3046 * 32768) */
+#define APP_DHT_CALIB_BT_Q15            9982
 #endif
 #ifndef APP_DHT_CALIB_AH_Q15
-#define APP_DHT_CALIB_AH_Q15            32112   /* round(0.9800 * 32768) */
+#define APP_DHT_CALIB_AH_Q15            32112
 #endif
 #ifndef APP_DHT_CALIB_BH_Q15
-#define APP_DHT_CALIB_BH_Q15            13180   /* round(0.4022 * 32768) */
+#define APP_DHT_CALIB_BH_Q15            13180
 #endif
 
 /* ---------- M6 MQ-2 中值 + 滑动平均级联 + 温漂补偿 + 变化率双判据 ---------- */
 #ifndef APP_MQ2_MEDIAN_WIN
-#define APP_MQ2_MEDIAN_WIN              5u      /* 中值窗口（奇数） */
+#define APP_MQ2_MEDIAN_WIN              5u
 #endif
 #ifndef APP_MQ2_MA_WIN
-#define APP_MQ2_MA_WIN                  8u      /* 滑动平均窗口 */
+#define APP_MQ2_MA_WIN                  8u
 #endif
-/* 温漂补偿：ADC_out = ADC_raw - APP_MQ2_TEMP_K_Q8 * (T - 25) / 256 */
 #ifndef APP_MQ2_TEMP_K_Q8
-#define APP_MQ2_TEMP_K_Q8               12      /* 温漂系数（Q8 定点） */
+#define APP_MQ2_TEMP_K_Q8               12
 #endif
 #ifndef APP_MQ2_TEMP_BASE_C
 #define APP_MQ2_TEMP_BASE_C             25
 #endif
-/* 变化率（斜率）判据：ΔADC/周期 超过阈值立即告警 */
 #ifndef APP_MQ2_SLOPE_THRESHOLD
 #define APP_MQ2_SLOPE_THRESHOLD         120u
 #endif
 
 /* ---------- M7 门禁五态 FSM + AS608 指纹识别任务 ---------- */
 #ifndef APP_LOCK_MAX_FAIL
-#define APP_LOCK_MAX_FAIL               3u      /* 连续失败锁定阈值 */
+#define APP_LOCK_MAX_FAIL               3u
 #endif
 #ifndef APP_LOCK_LOCKOUT_MS
-#define APP_LOCK_LOCKOUT_MS             30000u  /* 锁定持续时长 */
+#define APP_LOCK_LOCKOUT_MS             30000u
 #endif
 #ifndef APP_LOCK_OPEN_HOLD_MS
-#define APP_LOCK_OPEN_HOLD_MS           3000u   /* 开锁保持时长（继电器吸合） */
+#define APP_LOCK_OPEN_HOLD_MS           3000u
+#endif
+#ifndef APP_ADMIN_SESSION_MS
+#define APP_ADMIN_SESSION_MS            120000u
 #endif
 #ifndef APP_FINGER_MATCH_SCORE_MIN
-#define APP_FINGER_MATCH_SCORE_MIN      50u     /* AS608 PS_Search 置信度下限 */
+#define APP_FINGER_MATCH_SCORE_MIN      50u
 #endif
 
 /* ---------- M8 多传感器融合证据加权评分 ---------- */
@@ -608,29 +619,28 @@
 #define APP_FUSION_W_CAM_MOTION         40u
 #endif
 #ifndef APP_FUSION_TRIGGER_SCORE
-#define APP_FUSION_TRIGGER_SCORE        80u     /* 触发告警联动的评分阈值 */
+#define APP_FUSION_TRIGGER_SCORE        80u
 #endif
 
-/* 场景模式 ID（M8 scene.c 使用） */
 #ifndef SCENE_MODE_HOME
-#define SCENE_MODE_HOME                 0u      /* 居家：不布防、灯随手开 */
+#define SCENE_MODE_HOME                 0u
 #endif
 #ifndef SCENE_MODE_AWAY
-#define SCENE_MODE_AWAY                 1u      /* 离家布防：PIR 触发立告警 */
+#define SCENE_MODE_AWAY                 1u
 #endif
 #ifndef SCENE_MODE_NIGHT
-#define SCENE_MODE_NIGHT                2u      /* 夜间安防：部分区域 PIR 生效 */
+#define SCENE_MODE_NIGHT                2u
 #endif
 
 /* ---------- M9 MQTT 命令幂等去重 + AES-128 ---------- */
 #ifndef APP_CMD_DEDUP_RING
-#define APP_CMD_DEDUP_RING              16u     /* 去重环深度（近 16 条 cmdId） */
+#define APP_CMD_DEDUP_RING              16u
 #endif
 #ifndef APP_CMD_STALE_MS
-#define APP_CMD_STALE_MS                60000u  /* 超过该时效的命令直接丢弃 */
+#define APP_CMD_STALE_MS                60000u
 #endif
 #ifndef APP_SECURE_AES_ENABLE
-#define APP_SECURE_AES_ENABLE           1       /* admin 密码等敏感数据 AES-128 落盘 */
+#define APP_SECURE_AES_ENABLE           1
 #endif
 
 #endif /* __BOARD_CONFIG_H */

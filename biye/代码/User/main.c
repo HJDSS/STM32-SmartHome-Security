@@ -1,4 +1,4 @@
-﻿#include <stdio.h>
+#include <stdio.h>
 #include <string.h>
 #include "board_config.h"
 #include "delay.h"
@@ -16,13 +16,15 @@
 #include "keyboard_sm.h"
 #include "lock_manager.h"
 #include "oled_view.h"
-#include "oled.h"         /* [M1.9] 插桩需要 OLED_ShowChar 直接写格 */
+#include "oled.h"
 #include "linkage.h"
 #include "esp8266_tls.h"
 #include "syslog.h"
 #include "app_types.h"
 #include "app_params.h"
 #include "log.h"
+#include "app_rtos.h"
+#include "wdg.h"
 
 #define BUF2_MAX 800
 #define BUF3_MAX 400
@@ -120,13 +122,9 @@ static void app_init(void)
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
     delay_init();
 
-    /* [M1.6] 先把 ESP8266 EN(PC9) 配成推挽输出并置高，给 ESP-01S 一个稳定的
-     * "enable" 电平。必须在 USART2_Init_Config 之前完成，否则 ESP 还没真正
-     * 启动 UART，后续所有 AT 命令都会超时；现象就是 ESP 模块灯闪一下即熄。
-     * 详见 esp8266_tls.c:ESP8266_EN_GPIO_Init() 注释。*/
     ESP8266_EN_GPIO_Init();
 
-    uart1_Init(115200);
+    uart1_Init(57600);
     USART2_Init_Config(BOARD_WIFI_UART_BAUD);
 
     BEEP_AND_RELAY_GPIO_Init();
@@ -150,17 +148,17 @@ static void app_init(void)
     Linkage_Init();
     SysLog_Init();
     SysLog_Add(LOG_EVT_CONFIG, "BOOT");
+    if(WDG_LastResetWasIWDG())
+    {
+        SysLog_Add(LOG_EVT_ALARM, "RST_IWDG");
+    }
+    WDG_Init();
+    WDG_HwInit();
 
-    /* [M1.5] 自检页结束后先画一次"初始仪表盘"：
-     * 目的：M3 未完成前，ESP8266_OneNET_InitFsm_Poll 首次进入 case 40 会
-     *       同步阻塞 10~45s 做 CWJAP/MQTTCONN，期间主循环不能刷 OLED。
-     *       若不做这次"预刷"，用户会看到自检页挂很久而误以为系统死机。
-     *       g_sensor/g_esp 均为 BSS 零值，初显为 T:00 H:00 MQ:0 / NET:INIT /
-     *       Input Password / DISARMED，与 M3 落地后一致，不引入过渡 UI。
-     */
     OLED_View_RefreshDashboard(&g_sensor, LockManager_GetState(), &g_esp);
 }
 
+#if !USE_FREERTOS
 static void app_poll_sensors(void)
 {
     static u32 s_dht_ms = 0;
@@ -271,10 +269,19 @@ static void app_poll_sensors(void)
         g_sensor.mq2_alarm = s_mq2_fault ? 0u : MQ2_Check_Alarm(mq2_adc_value);
         if(g_sensor.mq2_alarm && !s_mq2_was_alarm)
         {
+#if BOARD_MQ2_ALARM_ENABLE
+            Linkage_OnGasState(1u);
+#if EN_OV7670_LOCAL
+            Capture_Request(CAP_EVT_GAS);
+#endif
+#endif
             LOG_SENSOR("MQ2 alarm on");
         }
         if(!g_sensor.mq2_alarm && s_mq2_was_alarm)
         {
+#if BOARD_MQ2_ALARM_ENABLE
+            Linkage_OnGasState(0u);
+#endif
             LOG_SENSOR("MQ2 alarm clear");
         }
         s_mq2_was_alarm = g_sensor.mq2_alarm;
@@ -327,7 +334,6 @@ static void app_export_stats(void)
     if((u32)(now - s_last_ms) < (u32)APP_STAT_EXPORT_MS) return;
     s_last_ms = now;
 
-    /* 固定 JSON 字段名，便于第6章测试脚本稳定解析 */
     sprintf(line,
             "{\"tag\":\"STAT_EXPORT\",\"tick\":%lu,\"false_alarm\":%lu,\"reconnect\":%lu,\"replay\":%u,\"sd_fail\":%u,\"run_ex_72h\":%lu}",
             (unsigned long)now,
@@ -358,7 +364,8 @@ static void app_poll_alarm_and_act(void)
         if(alarm == ALARM_GAS || alarm == ALARM_BOTH)
             Linkage_OnMQ2_Alarm();
 #if EN_OV7670_LOCAL
-        Capture_Request(CAP_EVT_INTRUSION);
+        if(alarm == ALARM_PIR || alarm == ALARM_BOTH)
+            Capture_Request(CAP_EVT_INTRUSION);
 #endif
     }
     else
@@ -419,47 +426,40 @@ static void app_poll_net(void)
 #endif
 }
 
-/* [M1.9] 主循环单环节阻塞定位探针。
- * 在每个 *_Tick/*_Poll 调用之前，把一个标识字母写到 OLED 第 3 行最后一格
- * (x=120,y=48)。正常情况下 main loop 一圈走完，这个格子会被
- * OLED_View_RefreshDashboard 里第 3 行整行刷新覆盖回空格；
- * 如果 main loop 卡在某个环节，OLED 上会持久显示那一环节的字母：
- *   Z = while(1) 头部（上一次 delay_ms 刚出）
- *   K = KeyboardSM_Tick      前
- *   L = LockManager_Tick     前
- *   S = app_poll_sensors     前（DHT11 / MQ2 / PIR）
- *   A = app_poll_alarm_and_act 前
- *   N = app_poll_net         前（ESP8266 FSM）
- *   C = Bare_CapturePoll     前（OV7670 + SD）
- *   R = app_report_stats     前
- *   X = app_export_stats     前（UART1 写 JSON）
- *   O = OLED_View_RefreshDashboard 前
- * 用法：Rebuild+Download 后上电，静等 10~30s，看 OLED 第 3 行末尾停在哪个字母。
- * 一旦定位出具体环节，就可以针对性插更细的桩或去掉该环节先让联网跑起来。
- * 副作用：每圈多 10 次单字符 I2C 写（SSD1306 软件 I2C，每次 ~1ms），共 +10ms/圈。
- */
 static void app_dbg_mark(char c)
 {
     OLED_ShowChar(120, 48, c, 16);
 }
+#endif
 
 int main(void)
 {
     app_init();
     Security_Set_Mode(0);
 
+#if USE_FREERTOS
+    AppRTOS_Start();
+    while(1) {}
+#else
     while(1)
     {
         app_dbg_mark('Z');
         app_dbg_mark('K'); KeyboardSM_Tick();
         app_dbg_mark('L'); LockManager_Tick();
         app_dbg_mark('S'); app_poll_sensors();
+        WDG_Mark(WDG_SRC_SENSOR);
         app_dbg_mark('A'); app_poll_alarm_and_act();
+        WDG_Mark(WDG_SRC_ALARM);
         app_dbg_mark('N'); app_poll_net();
+        WDG_Mark(WDG_SRC_NET);
         app_dbg_mark('C'); Bare_CapturePoll();
         app_dbg_mark('R'); app_report_stats();
         app_dbg_mark('X'); app_export_stats();
         app_dbg_mark('O'); OLED_View_RefreshDashboard(&g_sensor, LockManager_GetState(), &g_esp);
+        WDG_Mark(WDG_SRC_UI);
+        WDG_Mark(WDG_SRC_SYSMON);
+        WDG_Pump();
         delay_ms(20);
     }
+#endif
 }

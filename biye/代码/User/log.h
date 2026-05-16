@@ -4,14 +4,8 @@
 #include <stdio.h>
 #include "board_config.h"
 
-/*
- * 统一日志标签与开关（P1）
- * - 走 printf（最终由 usart1.c 的 fputc 输出）
- * - 可按 tag 单独开关
- */
-
 #ifndef APP_LOG_ENABLE
-#define APP_LOG_ENABLE  1
+#define APP_LOG_ENABLE  0
 #endif
 
 #ifndef APP_LOG_NET
@@ -68,4 +62,3 @@
 #endif
 
 #endif
-

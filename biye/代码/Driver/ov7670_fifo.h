@@ -4,7 +4,6 @@
 #include "sys.h"
 #include "board_config.h"
 
-// ====== FIFO/OV7670引脚可配置(按接线修改) ======
 #define OV_VSYNC_PORT        BOARD_OV_VSYNC_PORT
 #define OV_VSYNC_PIN         BOARD_OV_VSYNC_PIN
 #define OV_VSYNC_READ()      GPIO_ReadInputDataBit(OV_VSYNC_PORT,OV_VSYNC_PIN)
@@ -30,15 +29,14 @@
 #define OV_RCK_H()           GPIO_SetBits(OV_RCK_PORT,OV_RCK_PIN)
 #define OV_RCK_L()           GPIO_ResetBits(OV_RCK_PORT,OV_RCK_PIN)
 
-// 数据口(8bit)默认用 GPIOA[7:0]，若接线不同请修改读取宏
 #define OV_DATA_PORT         BOARD_OV_DATA_PORT
 #define OV_DATA_READ()       ((u8)(OV_DATA_PORT->IDR & 0x00FF))
 
 u8 OV7670_FIFO_Init(void);
 void OV7670_FIFO_StartCapture(void);
+u8 OV7670_FIFO_StartCaptureTimeout(u32 timeout_ms);
 void OV7670_FIFO_ResetReadPtr(void);
 u8 OV7670_FIFO_ReadByte(void);
-/* 最小自检：返回 OV7670 PID/VER（寄存器 0x0B/0x0A）最近一次读取值 */
 void OV7670_DebugGetId(u8 *pid, u8 *ver);
 
 #endif

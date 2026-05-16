@@ -5,8 +5,9 @@
 
 typedef enum
 {
-		CAP_EVT_INTRUSION = 1,
-		CAP_EVT_PWD_LOCK  = 2,
+    CAP_EVT_INTRUSION = 1,
+    CAP_EVT_PWD_LOCK  = 2,
+    CAP_EVT_GAS       = 3,
 }CAP_EVT_T;
 
 extern volatile u8 g_cap_evt_pending;
