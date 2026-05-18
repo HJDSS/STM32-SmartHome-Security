@@ -57,7 +57,10 @@
 #define APP_ADMIN_SESSION_MAX_MS   60000u  /* 录入/改密期间延长至 60s */
 #endif
 #ifndef APP_LOCK_OPEN_HOLD_MS
-#define APP_LOCK_OPEN_HOLD_MS      3000u
+#define APP_LOCK_OPEN_HOLD_MS      3000u   /* 开锁保持时间(ms) — 论文要求3秒 */
+#endif
+#ifndef APP_LOCK_OPEN_HOLD_TICKS
+#define APP_LOCK_OPEN_HOLD_TICKS   ((u8)(APP_LOCK_OPEN_HOLD_MS / 1000u))  /* TIM2每1秒递减1，15→3秒 */
 #endif
 #ifndef APP_FINGER_POLL_MS
 #define APP_FINGER_POLL_MS         200u

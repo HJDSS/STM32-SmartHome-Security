@@ -107,7 +107,7 @@ static void OneNET_Process_Remote_Ctrl(void)
         if(Ctrl_Door != 0u)
         {
             RELAY = 0;
-            RELAY_TIME = 15;
+            RELAY_TIME = APP_LOCK_OPEN_HOLD_TICKS;
             Linkage_OnUnlock(UNLOCK_SRC_REMOTE);
         }
         s_last_ctrl_door = Ctrl_Door;

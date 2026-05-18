@@ -32,13 +32,13 @@
 #define STK_LOCK        512u
 #endif
 #ifndef STK_SENSOR
-#define STK_SENSOR      384u
+#define STK_SENSOR      256u
 #endif
 #ifndef STK_OLED
 #define STK_OLED        256u
 #endif
 #ifndef STK_NET
-#define STK_NET         640u
+#define STK_NET         1024u
 #endif
 #ifndef STK_LOG
 #define STK_LOG         1024u
@@ -126,7 +126,7 @@ static void Task_Lock(void *arg)
         KeyboardSM_Tick();
         LockManager_Tick();
         WDG_Mark(WDG_SRC_ALARM);
-        vTaskDelay(pdMS_TO_TICKS(20u));
+        vTaskDelay(pdMS_TO_TICKS(APP_TASK_PERIOD_SECURITY_MS));
     }
 }
 
@@ -326,7 +326,7 @@ static void Task_Sensor(void *arg)
 
         BEEP_Tick10ms();
         WDG_Mark(WDG_SRC_SENSOR);
-        vTaskDelay(pdMS_TO_TICKS(10u));
+        vTaskDelay(pdMS_TO_TICKS(APP_TASK_PERIOD_SENSOR_MS));
     }
 }
 
@@ -366,7 +366,7 @@ static void Task_Net(void *arg)
         }
 
         WDG_Mark(WDG_SRC_NET);
-        vTaskDelay(pdMS_TO_TICKS(50u));
+        vTaskDelay(pdMS_TO_TICKS(APP_TASK_PERIOD_NET_MS));
     }
 }
 
@@ -379,7 +379,7 @@ static void Task_OLED(void *arg)
         OLED_View_RefreshDashboard(&g_sensor, LockManager_GetState(), &g_esp);
         xSemaphoreGive(s_sensor_mtx);
         WDG_Mark(WDG_SRC_UI);
-        vTaskDelay(pdMS_TO_TICKS(100u));
+        vTaskDelay(pdMS_TO_TICKS(APP_TASK_PERIOD_OLED_MS));
     }
 }
 
@@ -414,7 +414,7 @@ static void Task_Log(void *arg)
             {
                 g_finger_success++;
                 RELAY = 0;
-                RELAY_TIME = 15;
+                RELAY_TIME = APP_LOCK_OPEN_HOLD_TICKS;
                 OLED_ShowString(0, 16, "FP UNLOCK OK    ", 16);
                 Linkage_OnUnlock(UNLOCK_SRC_FINGER);
                 SysLog_Add(LOG_EVT_CONFIG, "FP_UNLOCK");

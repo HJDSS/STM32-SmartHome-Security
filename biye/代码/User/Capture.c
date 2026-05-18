@@ -64,9 +64,9 @@ typedef struct
 static cap_offline_item_t s_cap_q[CAP_OFFLINE_Q_DEPTH];
 static u8 s_cap_q_head = 0u;
 static u8 s_cap_q_tail = 0u;
-static u16 s_cap_q_drop = 0u;
-static u16 s_cap_q_flush_ok = 0u;
-static u16 s_cap_q_flush_fail = 0u;
+volatile u16 g_cap_q_drop = 0u;
+volatile u16 g_cap_q_flush_ok = 0u;
+volatile u16 g_cap_q_flush_fail = 0u;
 
 static u8 s_cap_row_wr[CAP_ROW_BYTES];
 
@@ -99,7 +99,7 @@ static void capture_enqueue_saved(const char *filename, u32 tick)
     if(next == s_cap_q_head && s_cap_q[s_cap_q_head].used)
     {
         s_cap_q_head = (u8)((s_cap_q_head + 1u) % CAP_OFFLINE_Q_DEPTH);
-        s_cap_q_drop++;
+        g_cap_q_drop++;
         SysLog_Add(LOG_EVT_ALARM, "CAP_Q_DROP");
     }
     s_cap_q[s_cap_q_tail].used = 1u;
@@ -121,14 +121,14 @@ static void capture_flush_offline_queue(void)
         {
             s_cap_q[s_cap_q_head].used = 0u;
             s_cap_q_head = (u8)((s_cap_q_head + 1u) % CAP_OFFLINE_Q_DEPTH);
-            s_cap_q_flush_ok++;
+            g_cap_q_flush_ok++;
             g_cap_replay_count++;
             SysLog_Add(LOG_EVT_CONFIG, "CAP_Q_FLUSH_OK");
             LOG_NET("cap replay ok: %s", sent_name);
         }
         else
         {
-            s_cap_q_flush_fail++;
+            g_cap_q_flush_fail++;
             SysLog_Add(LOG_EVT_ALARM, "CAP_Q_FLUSH_FAIL");
             LOG_NET("cap replay fail");
             break;
@@ -310,6 +310,8 @@ u8 Capture_LocalSnapshot(void)
     FILINFO fno;
     u8 ok = 0u;
 
+    g_cap_total_attempts++;
+
     if(g_capture_busy)
     {
         OLED_View_ToastRowAB("CAP BUSY        ", 1200u);
@@ -417,6 +419,7 @@ u8 Capture_LocalSnapshot(void)
         return 0u;
     }
 
+    g_cap_success_count++;
     SysLog_Add(LOG_EVT_CONFIG, "CAP_END_OK");
     Capture_OnSaved(name);
     g_capture_busy = 0u;

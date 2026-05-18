@@ -517,9 +517,9 @@
 /* ---------- M3 FreeRTOS 任务表（论文 §5.2） ---------- */
 /* 实际任务映射：
  *   Task_Lock  → SECURITY (PRIO_LOCK=5,  STK_LOCK=512,  tick=20ms)
- *   Task_Net   → NET      (PRIO_NET=4,   STK_NET=640,   tick=50ms)
- *   Task_Sensor→ SENSOR   (PRIO_SENSOR=3, STK_SENSOR=384, tick=10ms)
- *   Task_OLED  → UI       (PRIO_OLED=2,  STK_OLED=256,  tick=100ms) — 见 CAPTURE 保留行
+ *   Task_Net   → NET      (PRIO_NET=4,   STK_NET=1024,  tick=50ms)
+ *   Task_Sensor→ SENSOR   (PRIO_SENSOR=3, STK_SENSOR=256, tick=100ms)
+ *   Task_OLED  → UI       (PRIO_OLED=2,  STK_OLED=256,  tick=200ms)
  *   Task_Log   → SYSMON   (PRIO_LOG=3,   STK_LOG=1024,  tick=200ms)
  * 注意：fingerprint / capture 无独立 Task，分别内联于 Task_Log 和 Bare_CapturePoll
  */
@@ -540,26 +540,37 @@
 #define APP_TASK_STACK_SECURITY         512u
 #endif
 #ifndef APP_TASK_STACK_NET
-#define APP_TASK_STACK_NET              640u
+#define APP_TASK_STACK_NET              1024u
 #endif
 #ifndef APP_TASK_STACK_SENSOR
-#define APP_TASK_STACK_SENSOR           384u
+#define APP_TASK_STACK_SENSOR           256u
 #endif
 #ifndef APP_TASK_STACK_SYSMON
 #define APP_TASK_STACK_SYSMON           1024u /* 对应 Task_Log STK_LOG=1024 */
 #endif
 
 #ifndef APP_TASK_PERIOD_SECURITY_MS
-#define APP_TASK_PERIOD_SECURITY_MS     50u
+#define APP_TASK_PERIOD_SECURITY_MS     20u
 #endif
 #ifndef APP_TASK_PERIOD_NET_MS
-#define APP_TASK_PERIOD_NET_MS          100u
+#define APP_TASK_PERIOD_NET_MS          50u
 #endif
 #ifndef APP_TASK_PERIOD_SENSOR_MS
-#define APP_TASK_PERIOD_SENSOR_MS       200u
+#define APP_TASK_PERIOD_SENSOR_MS       100u
 #endif
 #ifndef APP_TASK_PERIOD_SYSMON_MS
 #define APP_TASK_PERIOD_SYSMON_MS       200u  /* 对应 Task_Log tick=200ms */
+#endif
+
+/* === OLED/UI 任务参数（论文 §5.2）=== */
+#ifndef APP_TASK_PRIO_OLED
+#define APP_TASK_PRIO_OLED              2u
+#endif
+#ifndef APP_TASK_STACK_OLED
+#define APP_TASK_STACK_OLED             256u
+#endif
+#ifndef APP_TASK_PERIOD_OLED_MS
+#define APP_TASK_PERIOD_OLED_MS         200u
 #endif
 
 /* === 以下为论文预留行，当前无独立 Task 实现 === */
@@ -678,12 +689,12 @@
 #ifndef APP_PIR_CLEAR_LOW_MS
 #define APP_PIR_CLEAR_LOW_MS            350u    /* PIR 低电平持续确认清除 — app_rtos.c / main.c */
 #endif
-/* NOTE: reserved for future implementation
 #ifndef APP_LOCK_OPEN_HOLD_MS
-#define APP_LOCK_OPEN_HOLD_MS           3000u   // 开锁保持时间（当前由 RELAY_TIME=15 硬编码 1.5s 控制）
+#define APP_LOCK_OPEN_HOLD_MS           3000u   /* 开锁保持时间(ms) — 论文要求3秒，通过APP_LOCK_OPEN_HOLD_TICKS转换为TIM2递减tick */
 #endif
+/* NOTE: reserved for future implementation — 指纹匹配最低得分（当前使用 AS608 库内部阈值）
 #ifndef APP_FINGER_MATCH_SCORE_MIN
-#define APP_FINGER_MATCH_SCORE_MIN      50u    // 指纹匹配最低得分（当前使用 AS608 库内部阈值）
+#define APP_FINGER_MATCH_SCORE_MIN      50u
 #endif
 */
 

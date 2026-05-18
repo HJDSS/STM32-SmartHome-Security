@@ -380,7 +380,7 @@ static void app_report_stats(void)
     s_last_ms = now;
     LOG_STAT("false_alarm=%lu reconnect=%lu replay=%u sd_fail=%u run_ex=%lu "
              "pwd_att=%lu pwd_ok=%lu fp_att=%lu fp_ok=%lu "
-             "pir_tot=%lu intr_ok=%lu cap_att=%u cap_ok=%u "
+             "pir_tot=%lu intr_ok=%lu cap_att=%u cap_ok=%u cap_q_drop=%u cap_q_ok=%u cap_q_fail=%u "
              "alarm_lat=%lu cmd_lat=%lu uptime=%lu",
              (unsigned long)g_false_alarm_count,
              (unsigned long)g_net_reconnect_count,
@@ -395,6 +395,9 @@ static void app_report_stats(void)
              (unsigned long)g_intrusion_confirm,
              (unsigned)g_cap_total_attempts,
              (unsigned)g_cap_success_count,
+             (unsigned)g_cap_q_drop,
+             (unsigned)g_cap_q_flush_ok,
+             (unsigned)g_cap_q_flush_fail,
              (unsigned long)(g_last_alarm_action_tick > g_last_alarm_trigger_tick
                 ? g_last_alarm_action_tick - g_last_alarm_trigger_tick : 0lu),
              (unsigned long)(g_last_cmd_completed_tick > g_last_cmd_received_tick
@@ -416,7 +419,7 @@ static void app_export_stats(void)
             ",\"pwd_att\":%lu,\"pwd_ok\":%lu"
             ",\"fp_att\":%lu,\"fp_ok\":%lu"
             ",\"pir_tot\":%lu,\"intr_ok\":%lu"
-            ",\"cap_att\":%u,\"cap_ok\":%u"
+            ",\"cap_att\":%u,\"cap_ok\":%u,\"cap_q_drop\":%u,\"cap_q_ok\":%u,\"cap_q_fail\":%u"
             ",\"alarm_lat_ms\":%lu,\"cmd_lat_ms\":%lu"
             ",\"uptime_s\":%lu"
             "}",
@@ -434,6 +437,9 @@ static void app_export_stats(void)
             (unsigned long)g_intrusion_confirm,
             (unsigned)g_cap_total_attempts,
             (unsigned)g_cap_success_count,
+            (unsigned)g_cap_q_drop,
+            (unsigned)g_cap_q_flush_ok,
+            (unsigned)g_cap_q_flush_fail,
             (unsigned long)(g_last_alarm_action_tick > g_last_alarm_trigger_tick
                 ? g_last_alarm_action_tick - g_last_alarm_trigger_tick : 0lu),
             (unsigned long)(g_last_cmd_completed_tick > g_last_cmd_received_tick
@@ -619,7 +625,7 @@ int main(void)
                     {
                         g_finger_success++;
                         RELAY = 0;
-                        RELAY_TIME = 15;
+                        RELAY_TIME = APP_LOCK_OPEN_HOLD_TICKS;
                         OLED_ShowString(0, 16, "FP UNLOCK OK    ", 16);
                         Linkage_OnUnlock(UNLOCK_SRC_FINGER);
                         SysLog_Add(LOG_EVT_CONFIG, "FP_UNLOCK");

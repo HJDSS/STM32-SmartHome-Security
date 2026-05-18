@@ -91,7 +91,7 @@ void LockManager_OnConfirm(const keypad_input_t *in)
         s_lock.admin_until_ms = 0u;
         s_lock.brute_alarm = 0u;
         RELAY = 0;
-        RELAY_TIME = 15;
+        RELAY_TIME = APP_LOCK_OPEN_HOLD_TICKS;
         OLED_ShowString(0, 16, "UNLOCK OK       ", 16);
         Linkage_OnUnlock(UNLOCK_SRC_PWD);
     }
@@ -105,7 +105,7 @@ void LockManager_OnConfirm(const keypad_input_t *in)
         s_lock.admin_until_ms = Bare_GetTickMs() + APP_ADMIN_SESSION_MS;
         s_lock.brute_alarm = 0u;
         RELAY = 0;
-        RELAY_TIME = 15;
+        RELAY_TIME = APP_LOCK_OPEN_HOLD_TICKS;
         OLED_ShowString(0, 16, "ADMIN MODE      ", 16);
         Linkage_OnUnlock(UNLOCK_SRC_PWD);
     }
