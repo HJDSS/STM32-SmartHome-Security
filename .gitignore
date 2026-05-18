@@ -20,6 +20,17 @@ biye/代码/Output/
 **/*.hex
 **/*.bin
 
+# Thesis / paper files — excluded from repo
+论文相关/
+releases/
+FIX_REPORT.md
+VERSION_DOCS.md
+thesis_code_gap_analysis.md
+图表公式格式模板.md
+论文格式整改说明.md
+biye.zip
+exported_agent_chats_*/
+
 # OS junk
 Thumbs.db
 Desktop.ini

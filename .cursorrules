@@ -1,0 +1,15 @@
+## Workspace rules (STM32/Keil/FreeRTOS)
+
+- **OLED**: 每行固定 16 字符，字符串尾部必须空格补齐，避免残留。
+- **硬件宏约定**: 不随意改 `board_config.h` 中引脚/电平宏的含义；若需调整，只能在同一文件内保持一致。
+- **FreeRTOS**: `USE_FREERTOS=1` 为主路径；中断向量 `SysTick_Handler` 需同时维护 `g_bare_tick_ms` 与 `xPortSysTickHandler()`（若启用 RTOS）。
+- **串口冲突**: AS608 指纹与 USART1 共线时，禁止 `printf/uart1_SendStr` 往 PA9 输出调试字符（避免污染 AS608 RX）。
+- **工程构建**: Keil 修改多文件后用 **Rebuild all target files**。
+- **版本管理**: 允许自动 `git commit` / `push`，无需每次确认。
+
+## Current state (2026-05-01)
+
+- 已引入 `app_rtos.c/.h`（FreeRTOS 任务启动入口 `AppRTOS_Start()`）。
+- AS608 等待/接收过程中加入 yield（`vTaskDelay(1)` 或 `delay_ms(1)` + `AS608_PollYield()`）。
+- OneNET 上报包含 `alarm`（bool）字段；平台侧以历史记录验证 `alarm` 可出现 `true/false` 变化。
+
