@@ -37,6 +37,15 @@
 #ifndef APP_PIR_MIN_ACTIVE_MS
 #define APP_PIR_MIN_ACTIVE_MS      200u
 #endif
+#ifndef APP_PIR_DEBOUNCE_DEFAULT
+#define APP_PIR_DEBOUNCE_DEFAULT   80u    /* 🟡13: PIR消抖默认值(ms) */
+#endif
+#ifndef APP_PIR_DEBOUNCE_MIN
+#define APP_PIR_DEBOUNCE_MIN       20u    /* 🟡13: PIR消抖最小可调值(ms) */
+#endif
+#ifndef APP_PIR_DEBOUNCE_MAX
+#define APP_PIR_DEBOUNCE_MAX       200u   /* 🟡13: PIR消抖最大可调值(ms) */
+#endif
 
 #ifndef APP_LOCK_MAX_FAIL
 #define APP_LOCK_MAX_FAIL          3u

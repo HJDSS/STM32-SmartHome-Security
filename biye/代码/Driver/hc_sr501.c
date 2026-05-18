@@ -11,6 +11,7 @@
 #endif
 
 volatile u8 g_hc_sr501_irq_flag = 0;
+volatile u8 g_pir_debounce_ms = APP_PIR_DEBOUNCE_DEFAULT;  /* 🟡13: 运行时可调 */
 
 /* 🟡11: 三段式误触发抑制状态 */
 static uint32_t s_pir_glitch_since_ms = 0u;
@@ -65,7 +66,7 @@ u8 HC_SR501_Poll_Triggered(void)
 {
     static u8 debounce_cnt = 0;
     u8 level = HC_SR501_Read_Level();
-    u8 debounce_tick = (HC_SR501_DEBOUNCE_MS + 9) / 10;
+    u8 debounce_tick = (g_pir_debounce_ms + 9u) / 10u;  /* 🟡13: 运行时变量替代编译期宏 */
 
     if(level == HC_SR501_TRIGGER_LEVEL)
     {

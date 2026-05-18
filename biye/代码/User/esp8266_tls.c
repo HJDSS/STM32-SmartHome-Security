@@ -11,6 +11,13 @@
 #include "gpio.h"
 #include "linkage.h"
 #include "lock_manager.h"
+#include "capture_task.h"
+
+#if USE_FREERTOS
+#include "app_rtos.h"
+#endif
+
+extern u8 g_pir_debounce_ms;  /* 🟡13: hc_sr501.c 运行时消抖变量 */
 
 extern volatile u8 RELAY_TIME;
 extern volatile u32 g_last_cmd_received_tick;
@@ -1006,6 +1013,35 @@ void OneNET_Parse_Cmd(void)
         else if(strstr(p, "\"arm\":{\"value\":true") != NULL) { cmd_arm = 1u; cmd_arm_found = 1u; }
         else if(strstr(p, "\"arm\":{\"value\":false") != NULL) { cmd_arm = 0u; cmd_arm_found = 1u; }
     }
+    /* 🟡2: 手动抓拍命令 */
+    if((p = strstr((char *)param_src, "\"capture\"")) != NULL
+       || (p = strstr((char *)param_src, "\"snapshot\"")) != NULL)
+    {
+        (void)p;
+        UART1_SendStr("[CMD] remote capture\r\n");
+#if EN_OV7670_LOCAL
+        Capture_Request(CAP_EVT_REMOTE);
+#endif
+#if USE_FREERTOS
+        IPC_NotifyCaptureReq();
+#endif
+    }
+
+    /* 🟡2+🟡13: 阈值配置命令 — 支持 pir_debounce 子字段 */
+    if((p = strstr((char *)param_src, "\"threshold\"")) != NULL)
+    {
+        unsigned th_val;
+        if(sscanf(p, "\"threshold\":{\"value\":{\"pir_debounce\":%u", &th_val) == 1
+           || sscanf(p, "\"threshold\":{\"pir_debounce\":%u", &th_val) == 1)
+        {
+            /* 🟡13: PIR 消抖灵敏度运行时可调，范围 [20,200] ms */
+            if(th_val >= 20u && th_val <= 200u)
+                g_pir_debounce_ms = (u8)th_val;
+        }
+        /* NOTE: gas/pir_lockout 阈值接口预留，当前使用编译期常量 */
+        UART1_SendStr("[CMD] threshold config\r\n");
+    }
+
     if(cmd_arm_found)
     {
         Ctrl_Arm = cmd_arm;

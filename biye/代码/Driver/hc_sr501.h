@@ -21,8 +21,11 @@
 /* 触发电平：1=高电平触发（上升沿进中断），0=低电平触发（下降沿进中断） */
 #define HC_SR501_TRIGGER_LEVEL             1
 
-/* 防抖延时（单位：ms） */
-#define HC_SR501_DEBOUNCE_MS               80
+/* 🟡13: 灵敏度运行时可调 — 默认80ms，范围[20,200] */
+#ifndef APP_PIR_DEBOUNCE_DEFAULT
+#define APP_PIR_DEBOUNCE_DEFAULT           80u
+#endif
+extern u8 g_pir_debounce_ms;
 
 extern volatile u8 g_hc_sr501_irq_flag;
 
