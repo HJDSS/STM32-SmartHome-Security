@@ -7,6 +7,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
+#include "event_groups.h"
 
 #include "delay.h"
 #include "keyboard_sm.h"
@@ -23,6 +24,7 @@
 #include "app_types.h"
 #include "app_params.h"
 #include "syslog.h"
+#include "as608.h"
 
 #ifndef STK_LOCK
 #define STK_LOCK        512u
@@ -60,6 +62,11 @@ static esp_state_t g_esp;
 
 static SemaphoreHandle_t s_sensor_mtx;
 
+/* IPC 句柄 */
+static QueueHandle_t       s_alarm_q;
+static EventGroupHandle_t  s_evt_group;
+static SemaphoreHandle_t   s_pir_sem;
+
 extern u8 security_mode;
 extern u8 security_alarm;
 extern u8 dht11_temp;
@@ -67,17 +74,78 @@ extern u8 dht11_humi;
 extern u16 mq2_adc_value;
 extern arm_mode_t arm_mode;
 extern volatile u32 g_false_alarm_count;
+extern volatile u8 RELAY_TIME;
 
 extern void CLR_Buf2(void);
 extern void Security_Set_ArmMode(arm_mode_t mode);
 
+static void IPC_Init(void)
+{
+    s_alarm_q   = xQueueCreate(APP_IPC_ALARM_Q_DEPTH, sizeof(alarm_event_t));
+    s_evt_group = xEventGroupCreate();
+    s_pir_sem   = xSemaphoreCreateBinary();
+    /* s_sensor_mtx 仍由 AppRTOS_Start 在 IPC_Init 之后创建 */
+}
+
+/* IPC: ISR→Task PIR 通知 */
+void IPC_NotifyPIR_FromISR(BaseType_t *pxHigherPriorityTaskWoken)
+{
+    if (s_pir_sem != NULL)
+        xSemaphoreGiveFromISR(s_pir_sem, pxHigherPriorityTaskWoken);
+}
+
+/* IPC: EventGroup 通知 —— arm 状态变更 */
+void IPC_NotifyArmStateChange(void)
+{
+    if (s_evt_group != NULL)
+        xEventGroupSetBits(s_evt_group, EVT_ARM_STATE);
+}
+
+/* IPC: EventGroup 通知 —— 网络上线 */
+void IPC_NotifyNetOnline(void)
+{
+    if (s_evt_group != NULL)
+        xEventGroupSetBits(s_evt_group, EVT_NET_ONLINE);
+}
+
+/* IPC: EventGroup 通知 —— 抓拍请求 */
+void IPC_NotifyCaptureReq(void)
+{
+    if (s_evt_group != NULL)
+        xEventGroupSetBits(s_evt_group, EVT_CAPTURE_REQ);
+}
+
 static void Task_Lock(void *arg)
 {
     (void)arg;
+#if EN_AS608
+    uint8_t fp_poll_cnt = 0;
+#endif
     for (;;)
     {
         KeyboardSM_Tick();
         LockManager_Tick();
+#if EN_AS608
+        fp_poll_cnt++;
+        if (fp_poll_cnt >= 10u)  /* 10 * 20ms = 200ms polling interval */
+        {
+            fp_poll_cnt = 0u;
+            {
+                unsigned short match = AS608_Find_Fingerprint();
+                if (match > 0u && match != (unsigned short)0xFFFEu)
+                {
+                    RELAY = 0;
+                    RELAY_TIME = 15;
+                    OLED_ShowString(0, 16, "FP UNLOCK OK    ", 16);
+                    Linkage_OnUnlock(UNLOCK_SRC_FINGER);
+                    SysLog_Add(LOG_EVT_CONFIG, "FP_UNLOCK");
+                    arm_mode = ARM_MODE_DISARM;
+                    security_mode = 0u;
+                    LockManager_ClearBruteAlarm();
+                }
+            }
+        }
+#endif
         WDG_Mark(WDG_SRC_ALARM);
         vTaskDelay(pdMS_TO_TICKS(20u));
     }
@@ -105,13 +173,17 @@ static void Task_Sensor(void *arg)
             {
                 dht11_temp = t;
                 dht11_humi = h;
+                xSemaphoreTake(s_sensor_mtx, portMAX_DELAY);
                 g_sensor.temp = t;
                 g_sensor.humi = h;
                 g_sensor.dht_ok = 1u;
+                xSemaphoreGive(s_sensor_mtx);
             }
             else
             {
+                xSemaphoreTake(s_sensor_mtx, portMAX_DELAY);
                 g_sensor.dht_ok = 0u;
+                xSemaphoreGive(s_sensor_mtx);
             }
         }
 
@@ -119,14 +191,17 @@ static void Task_Sensor(void *arg)
         {
             last_mq2 = now;
             mq2_adc_value = MQ2_Read_ADC_Filter();
+            xSemaphoreTake(s_sensor_mtx, portMAX_DELAY);
             g_sensor.mq2_adc = mq2_adc_value;
             g_sensor.mq2_alarm = MQ2_Check_Alarm(mq2_adc_value);
+            xSemaphoreGive(s_sensor_mtx);
 #if BOARD_MQ2_ALARM_ENABLE
             if (g_sensor.mq2_alarm && !s_mq2_was_alarm)
             {
                 Linkage_OnGasState(1u);
 #if EN_OV7670_LOCAL
                 Capture_Request(CAP_EVT_GAS);
+                IPC_NotifyCaptureReq();
 #endif
             }
             if (!g_sensor.mq2_alarm && s_mq2_was_alarm)
@@ -137,10 +212,9 @@ static void Task_Sensor(void *arg)
             s_mq2_was_alarm = g_sensor.mq2_alarm;
         }
 
-        /* PIR 检测 */
-        if (HC_SR501_IRQHandler_GetFlag())
+        /* PIR 检测 —— 二进制信号量替代轮询 */
+        if (xSemaphoreTake(s_pir_sem, pdMS_TO_TICKS(100)) == pdTRUE)
         {
-            HC_SR501_IRQHandler_ClearFlag();
             s_pir_low_since = 0u;
             if (arm_mode == ARM_MODE_DISARM)
             {
@@ -149,14 +223,16 @@ static void Task_Sensor(void *arg)
             }
             if ((int32_t)(now - s_pir_quiet_until) >= 0)
             {
+                xSemaphoreTake(s_sensor_mtx, portMAX_DELAY);
                 g_sensor.pir_alarm = 1u;
+                xSemaphoreGive(s_sensor_mtx);
             }
             else
             {
                 s_pir_quiet_until = now + pdMS_TO_TICKS(APP_PIR_SUPPRESS_MS);
             }
         }
-        else if (!HC_SR501_Poll_Triggered())
+        if (!HC_SR501_Poll_Triggered())
         {
             if (g_sensor.pir_alarm)
             {
@@ -164,7 +240,9 @@ static void Task_Sensor(void *arg)
                     s_pir_low_since = now;
                 if ((uint32_t)(now - s_pir_low_since) >= pdMS_TO_TICKS(APP_PIR_CLEAR_LOW_MS))
                 {
+                    xSemaphoreTake(s_sensor_mtx, portMAX_DELAY);
                     g_sensor.pir_alarm = 0u;
+                    xSemaphoreGive(s_sensor_mtx);
                     s_pir_low_since = 0u;
                 }
             }
@@ -184,7 +262,7 @@ static void Task_Sensor(void *arg)
                 s_brute_beep_until = now + pdMS_TO_TICKS(APP_BRUTE_BEEP_MS);
             }
             if ((uint32_t)(now - s_brute_beep_until) < pdMS_TO_TICKS(APP_BRUTE_BEEP_MS))
-                BEEP_SoundOn();
+                BEEP_StartPattern(BEEP_PATTERN_LOCKOUT);
 
             /* security_alarm: HOME 模式 PIR 不上报云端 */
             {
@@ -201,37 +279,51 @@ static void Task_Sensor(void *arg)
                 u8 is_pir = (alarm == ALARM_PIR || alarm == ALARM_BOTH);
                 u8 is_gas = (alarm == ALARM_GAS || alarm == ALARM_BOTH);
 
+                /* IPC: 告警事件入队 */
+                if (s_alarm_q != NULL)
+                {
+                    alarm_event_t evt;
+                    evt.type    = alarm;
+                    evt.tick_ms = (uint32_t)xTaskGetTickCount() * portTICK_PERIOD_MS;
+                    evt.adc_value = mq2_adc_value;
+                    xQueueSend(s_alarm_q, &evt, 0);
+                }
+
                 if (is_pir)
                 {
                     if (arm_mode == ARM_MODE_HOME)
                     {
-                        BEEP_SoundOn();
+                        BEEP_StartPattern(BEEP_PATTERN_INTRUSION);
                     }
                     else
                     {
-                        BEEP_SoundOn();
+                        BEEP_StartPattern(BEEP_PATTERN_INTRUSION);
                         Linkage_OnIntrusion();
 #if EN_OV7670_LOCAL
                         Capture_Request(CAP_EVT_INTRUSION);
+                        IPC_NotifyCaptureReq();
 #endif
                         SysLog_Add(LOG_EVT_ALARM, "PIR_INTRUSION");
                     }
                 }
                 if (is_gas)
                 {
-                    BEEP_SoundOn();
+                    BEEP_StartPattern(BEEP_PATTERN_GAS);
                     Linkage_OnMQ2_Alarm();
                 }
             }
             else
             {
-                if (!LockManager_IsBruteAlarm())
-                    BEEP_SoundOff();
+                if (LockManager_IsBruteAlarm())
+                    BEEP_StartPattern(BEEP_PATTERN_LOCKOUT);
+                else
+                    BEEP_Stop();
             }
 
             OLED_View_ShowAlarm(alarm);
         }
 
+        BEEP_Tick10ms();
         WDG_Mark(WDG_SRC_SENSOR);
         vTaskDelay(pdMS_TO_TICKS(10u));
     }
@@ -241,6 +333,7 @@ static void Task_Net(void *arg)
 {
     (void)arg;
     uint32_t last_post = 0;
+    static u8 s_was_online = 0u;
 
     for (;;)
     {
@@ -251,6 +344,11 @@ static void Task_Net(void *arg)
         if (ESP8266_Online_Flag)
         {
             uint32_t now = (uint32_t)xTaskGetTickCount();
+            if (!s_was_online)
+            {
+                IPC_NotifyNetOnline();
+                s_was_online = 1u;
+            }
             OneNET_Parse_Cmd();
             if ((uint32_t)(now - last_post) >= pdMS_TO_TICKS(APP_PROPERTY_POST_MS))
             {
@@ -260,6 +358,10 @@ static void Task_Net(void *arg)
                                     security_mode, security_alarm, Ctrl_Led);
                 CLR_Buf2();
             }
+        }
+        else
+        {
+            s_was_online = 0u;
         }
 
         WDG_Mark(WDG_SRC_NET);
@@ -272,7 +374,9 @@ static void Task_OLED(void *arg)
     (void)arg;
     for (;;)
     {
+        xSemaphoreTake(s_sensor_mtx, portMAX_DELAY);
         OLED_View_RefreshDashboard(&g_sensor, LockManager_GetState(), &g_esp);
+        xSemaphoreGive(s_sensor_mtx);
         WDG_Mark(WDG_SRC_UI);
         vTaskDelay(pdMS_TO_TICKS(100u));
     }
@@ -283,6 +387,20 @@ static void Task_Log(void *arg)
     (void)arg;
     for (;;)
     {
+        /* IPC: 从告警队列取事件并写 syslog */
+        if (s_alarm_q != NULL)
+        {
+            alarm_event_t evt;
+            while (xQueueReceive(s_alarm_q, &evt, 0) == pdTRUE)
+            {
+                if (evt.type == ALARM_PIR)
+                    SysLog_Add(LOG_EVT_ALARM, "Q_PIR");
+                else if (evt.type == ALARM_GAS)
+                    SysLog_Add(LOG_EVT_ALARM, "Q_GAS");
+                else if (evt.type == ALARM_BOTH)
+                    SysLog_Add(LOG_EVT_ALARM, "Q_BOTH");
+            }
+        }
         WDG_Mark(WDG_SRC_SYSMON);
         WDG_Pump();
         vTaskDelay(pdMS_TO_TICKS(1000u));
@@ -308,6 +426,8 @@ void vApplicationMallocFailedHook(void)
 void AppRTOS_Start(void)
 {
     BaseType_t ok;
+
+    IPC_Init();
 
     s_sensor_mtx = xSemaphoreCreateMutex();
     if (s_sensor_mtx == NULL)

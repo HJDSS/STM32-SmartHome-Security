@@ -123,3 +123,166 @@ void AES128_CTR_XCrypt(const AES128_CTX *ctx,const u8 nonce[16],u32 counter,u8 *
 		}
 }
 
+/* ========== AES-128 Inverse Cipher (for CBC decrypt) ========== */
+
+static const u8 inv_sbox[256]={
+0x52,0x09,0x6A,0xD5,0x30,0x36,0xA5,0x38,0xBF,0x40,0xA3,0x9E,0x81,0xF3,0xD7,0xFB,
+0x7C,0xE3,0x39,0x82,0x9B,0x2F,0xFF,0x87,0x34,0x8E,0x43,0x44,0xC4,0xDE,0xE9,0xCB,
+0x54,0x7B,0x94,0x32,0xA6,0xC2,0x23,0x3D,0xEE,0x4C,0x95,0x0B,0x42,0xFA,0xC3,0x4E,
+0x08,0x2E,0xA1,0x66,0x28,0xD9,0x24,0xB2,0x76,0x5B,0xA2,0x49,0x6D,0x8B,0xD1,0x25,
+0x72,0xF8,0xF6,0x64,0x86,0x68,0x98,0x16,0xD4,0xA4,0x5C,0xCC,0x5D,0x65,0xB6,0x92,
+0x6C,0x70,0x48,0x50,0xFD,0xED,0xB9,0xDA,0x5E,0x15,0x46,0x57,0xA7,0x8D,0x9D,0x84,
+0x90,0xD8,0xAB,0x00,0x8C,0xBC,0xD3,0x0A,0xF7,0xE4,0x58,0x05,0xB8,0xB3,0x45,0x06,
+0xD0,0x2C,0x1E,0x8F,0xCA,0x3F,0x0F,0x02,0xC1,0xAF,0xBD,0x03,0x01,0x13,0x8A,0x6B,
+0x3A,0x91,0x11,0x41,0x4F,0x67,0xDC,0xEA,0x97,0xF2,0xCF,0xCE,0xF0,0xB4,0xE6,0x73,
+0x96,0xAC,0x74,0x22,0xE7,0xAD,0x35,0x85,0xE2,0xF9,0x37,0xE8,0x1C,0x75,0xDF,0x6E,
+0x47,0xF1,0x1A,0x71,0x1D,0x29,0xC5,0x89,0x6F,0xB7,0x62,0x0E,0xAA,0x18,0xBE,0x1B,
+0xFC,0x56,0x3E,0x4B,0xC6,0xD2,0x79,0x20,0x9A,0xDB,0xC0,0xFE,0x78,0xCD,0x5A,0xF4,
+0x1F,0xDD,0xA8,0x33,0x88,0x07,0xC7,0x31,0xB1,0x12,0x10,0x59,0x27,0x80,0xEC,0x5F,
+0x60,0x51,0x7F,0xA9,0x19,0xB5,0x4A,0x0D,0x2D,0xE5,0x7A,0x9F,0x93,0xC9,0x9C,0xEF,
+0xA0,0xE0,0x3B,0x4D,0xAE,0x2A,0xF5,0xB0,0xC8,0xEB,0xBB,0x3C,0x83,0x53,0x99,0x61,
+0x17,0x2B,0x04,0x7E,0xBA,0x77,0xD6,0x26,0xE1,0x69,0x14,0x63,0x55,0x21,0x0C,0x7D
+};
+
+static void inv_sub_bytes(u8 *s)
+{
+		u8 i;
+		for(i=0;i<16;i++) s[i]=inv_sbox[s[i]];
+}
+
+static void inv_shift_rows(u8 *s)
+{
+		u8 t;
+		t=s[13]; s[13]=s[9]; s[9]=s[5]; s[5]=s[1]; s[1]=t;
+		t=s[2]; s[2]=s[10]; s[10]=t; t=s[6]; s[6]=s[14]; s[14]=t;
+		t=s[3]; s[3]=s[7]; s[7]=s[11]; s[11]=s[15]; s[15]=t;
+}
+
+/* GF(2^8) multiplication helpers for inv_mix_columns (used to avoid full lookup tables) */
+static u8 gf_mul9(u8 x)  { u8 t=xtime(xtime(xtime(x))); return t ^ x; }
+static u8 gf_mul11(u8 x) { u8 t=xtime(xtime(xtime(x))); return t ^ xtime(x) ^ x; }
+static u8 gf_mul13(u8 x) { u8 t=xtime(xtime(xtime(x))); return t ^ xtime(xtime(x)) ^ x; }
+static u8 gf_mul14(u8 x) { u8 t=xtime(xtime(xtime(x))); return t ^ xtime(xtime(x)) ^ xtime(x); }
+
+static void inv_mix_columns(u8 *s)
+{
+		u8 i;
+		for(i=0;i<4;i++)
+		{
+				u8 *c=&s[i*4];
+				u8 a0=c[0],a1=c[1],a2=c[2],a3=c[3];
+				c[0]=gf_mul14(a0) ^ gf_mul11(a1) ^ gf_mul13(a2) ^ gf_mul9(a3);
+				c[1]=gf_mul9(a0)  ^ gf_mul14(a1) ^ gf_mul11(a2) ^ gf_mul13(a3);
+				c[2]=gf_mul13(a0) ^ gf_mul9(a1)  ^ gf_mul14(a2) ^ gf_mul11(a3);
+				c[3]=gf_mul11(a0) ^ gf_mul13(a1) ^ gf_mul9(a2)  ^ gf_mul14(a3);
+		}
+}
+
+void AES128_DecryptBlock(const AES128_CTX *ctx,const u8 in[16],u8 out[16])
+{
+		u8 s[16];
+		u8 round;
+		for(round=0;round<16;round++) s[round]=in[round];
+
+		add_round_key(s,&ctx->rk[160]);
+		for(round=9;round>=1;round--)
+		{
+				inv_shift_rows(s);
+				inv_sub_bytes(s);
+				add_round_key(s,&ctx->rk[round*16]);
+				inv_mix_columns(s);
+		}
+		inv_shift_rows(s);
+		inv_sub_bytes(s);
+		add_round_key(s,&ctx->rk[0]);
+		for(round=0;round<16;round++) out[round]=s[round];
+}
+
+/* ========== AES-128-CBC Mode ========== */
+
+void AES128_CBC_Encrypt(const u8 *key, u8 *iv, u8 *plain, u16 plain_len)
+{
+		AES128_CTX ctx;
+		u8 block[16];
+		u16 off;
+		u8 j;
+
+		AES128_KeyInit(&ctx, key);
+		for(off=0; off<plain_len; off+=16)
+		{
+				for(j=0; j<16; j++) block[j]=plain[off+j] ^ iv[j];
+				AES128_EncryptBlock(&ctx, block, block);
+				for(j=0; j<16; j++) { plain[off+j]=block[j]; iv[j]=block[j]; }
+		}
+}
+
+void AES128_CBC_Decrypt(const u8 *key, u8 *iv, u8 *cipher, u16 cipher_len)
+{
+		AES128_CTX ctx;
+		u8 next_iv[16];
+		u8 block[16];
+		u16 off;
+		u8 j;
+
+		AES128_KeyInit(&ctx, key);
+		for(off=0; off<cipher_len; off+=16)
+		{
+				for(j=0; j<16; j++) next_iv[j]=cipher[off+j];
+				AES128_DecryptBlock(&ctx, &cipher[off], block);
+				for(j=0; j<16; j++) { cipher[off+j]=block[j] ^ iv[j]; }
+				for(j=0; j<16; j++) iv[j]=next_iv[j];
+		}
+}
+
+/* ========== HMAC-AES-CBC-MAC (lightweight integrity) ========== */
+
+/* Internal: AES-CBC-MAC primitive. Pads data to 16-byte boundary with zeros,
+ * CBC-encrypts with zero IV using the given key, returns last ciphertext block. */
+static void AES128_CBC_MAC(const u8 *key, const u8 *data, u32 len, u8 mac_out[16])
+{
+		AES128_CTX ctx;
+		u8 iv[16];
+		u8 block[16];
+		u32 off;
+		u8 j;
+
+		for(j=0; j<16; j++) iv[j]=0;
+		AES128_KeyInit(&ctx, key);
+
+		for(off=0; off<len; off+=16)
+		{
+				for(j=0; j<16; j++)
+				{
+						if((off+j)<len) block[j]=data[off+j] ^ iv[j];
+						else block[j]=iv[j];  /* zero-pad: XOR with 0 = unchanged */
+				}
+				AES128_EncryptBlock(&ctx, block, iv);
+		}
+		/* If len was an exact multiple of 16, iv holds the last ciphertext block.
+		 * If len needed padding, the last iteration produced the MAC in iv. */
+		for(j=0; j<16; j++) mac_out[j]=iv[j];
+}
+
+void AES128_ComputeHMAC(const u8 *key, const u8 *data, u32 len, u8 mac_out[16])
+{
+		u8 inner_key[16];
+		u8 outer_key[16];
+		u8 inner_hash[16];
+		AES128_CTX ctx;
+		u8 i;
+
+		/* Derive inner/outer keys per HMAC construction (ipad=0x36, opad=0x5C) */
+		for(i=0; i<16; i++)
+		{
+				inner_key[i]=key[i] ^ 0x36;
+				outer_key[i]=key[i] ^ 0x5C;
+		}
+
+		/* Inner: AES-CBC-MAC of data using inner key */
+		AES128_CBC_MAC(inner_key, data, len, inner_hash);
+
+		/* Outer: single-block AES encrypt using outer key */
+		AES128_KeyInit(&ctx, outer_key);
+		AES128_EncryptBlock(&ctx, inner_hash, mac_out);
+}
+

@@ -93,12 +93,18 @@ void Security_Set_Mode(u8 armed)
 {
     security_mode = armed ? 1u : 0u;
     arm_mode = armed ? ARM_MODE_AWAY : ARM_MODE_DISARM;
+#if USE_FREERTOS
+    IPC_NotifyArmStateChange();
+#endif
 }
 
 void Security_Set_ArmMode(arm_mode_t mode)
 {
     arm_mode = mode;
     security_mode = (mode != ARM_MODE_DISARM) ? 1u : 0u;
+#if USE_FREERTOS
+    IPC_NotifyArmStateChange();
+#endif
 }
 
 void ESP8266_CooperativeYield(void)
@@ -386,7 +392,7 @@ static void app_poll_alarm_and_act(void)
         s_brute_beep_until = now + (u32)APP_BRUTE_BEEP_MS;
     }
     if((u32)(now - s_brute_beep_until) < (u32)APP_BRUTE_BEEP_MS)
-        BEEP_SoundOn();
+        BEEP_StartPattern(BEEP_PATTERN_LOCKOUT);
 
     /* security_alarm: HOME 模式 PIR 不上报云端 */
     {
@@ -408,12 +414,12 @@ static void app_poll_alarm_and_act(void)
             if(arm_mode == ARM_MODE_HOME)
             {
                 /* HOME 模式：仅本地蜂鸣+OLED，不上传云端/不联动/不抓拍 */
-                BEEP_SoundOn();
+                BEEP_StartPattern(BEEP_PATTERN_INTRUSION);
             }
             else
             {
                 /* AWAY 模式：完整入侵联动+抓拍+云端告警 */
-                BEEP_SoundOn();
+                BEEP_StartPattern(BEEP_PATTERN_INTRUSION);
                 Linkage_OnIntrusion();
 #if EN_OV7670_LOCAL
                 Capture_Request(CAP_EVT_INTRUSION);
@@ -423,14 +429,16 @@ static void app_poll_alarm_and_act(void)
         }
         if(is_gas)
         {
-            BEEP_SoundOn();
+            BEEP_StartPattern(BEEP_PATTERN_GAS);
             Linkage_OnMQ2_Alarm();
         }
     }
     else
     {
-        if(!LockManager_IsBruteAlarm())
-            BEEP_SoundOff();
+        if(LockManager_IsBruteAlarm())
+            BEEP_StartPattern(BEEP_PATTERN_LOCKOUT);
+        else
+            BEEP_Stop();
     }
 
     OLED_View_ShowAlarm(alarm);
@@ -506,8 +514,34 @@ int main(void)
         app_dbg_mark('Z');
         app_dbg_mark('K'); KeyboardSM_Tick();
         app_dbg_mark('L'); LockManager_Tick();
+#if EN_AS608
+        app_dbg_mark('F');
+        {
+            static u32 fp_next_ms = 0;
+            u32 now = Bare_GetTickMs();
+            if ((s32)(now - fp_next_ms) >= 0)
+            {
+                fp_next_ms = now + (u32)APP_FINGER_POLL_MS;
+                {
+                    unsigned short match = AS608_Find_Fingerprint();
+                    if (match > 0u && match != (unsigned short)0xFFFEu)
+                    {
+                        RELAY = 0;
+                        RELAY_TIME = 15;
+                        OLED_ShowString(0, 16, "FP UNLOCK OK    ", 16);
+                        Linkage_OnUnlock(UNLOCK_SRC_FINGER);
+                        SysLog_Add(LOG_EVT_CONFIG, "FP_UNLOCK");
+                        arm_mode = ARM_MODE_DISARM;
+                        security_mode = 0u;
+                        LockManager_ClearBruteAlarm();
+                    }
+                }
+            }
+        }
+#endif
         app_dbg_mark('S'); app_poll_sensors();
         WDG_Mark(WDG_SRC_SENSOR);
+        BEEP_Tick10ms();
         app_dbg_mark('A'); app_poll_alarm_and_act();
         WDG_Mark(WDG_SRC_ALARM);
         app_dbg_mark('N'); app_poll_net();

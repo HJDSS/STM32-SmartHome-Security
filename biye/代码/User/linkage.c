@@ -60,6 +60,8 @@ void Linkage_MQTT_Report(char *msg)
 
 void Linkage_OnUnlock(UNLOCK_SRC_T src)
 {
+    /* 门禁解锁：三声短促提示音（独立于 LINKAGE_EN，始终生效） */
+    BEEP_StartPattern(BEEP_PATTERN_DOORBELL);
 #if DEBUG_PASSWORD_ONLY
     (void)src;
     return;

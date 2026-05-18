@@ -67,4 +67,17 @@ typedef struct
     u8 remote_disarm_req;
 } esp_state_t;
 
+/* ---------- IPC: 告警队列元素 ---------- */
+typedef struct
+{
+    alarm_type_t type;
+    uint32_t     tick_ms;
+    uint16_t     adc_value;
+} alarm_event_t;
+
+/* ---------- IPC: 事件组位定义 ---------- */
+#define EVT_ARM_STATE    (1u << 0)
+#define EVT_NET_ONLINE   (1u << 1)
+#define EVT_CAPTURE_REQ  (1u << 2)
+
 #endif

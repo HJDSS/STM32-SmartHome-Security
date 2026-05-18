@@ -3,6 +3,12 @@
 /* EXTI 结构体/宏定义来自 stm32f10x_exti.h（Keil C89/老版库需显式 include） */
 #include "stm32f10x_exti.h"
 
+#if USE_FREERTOS
+#include "FreeRTOS.h"
+#include "task.h"
+#include "app_rtos.h"
+#endif
+
 volatile u8 g_hc_sr501_irq_flag = 0;
 
 void HC_SR501_Init(void)
@@ -90,6 +96,13 @@ void EXTI4_IRQHandler(void)
     if(EXTI_GetITStatus(HC_SR501_EXTI_LINE) != RESET)
     {
         g_hc_sr501_irq_flag = 1;
+#if USE_FREERTOS
+        {
+            BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+            IPC_NotifyPIR_FromISR(&xHigherPriorityTaskWoken);
+            portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+        }
+#endif
         EXTI_ClearITPendingBit(HC_SR501_EXTI_LINE);
     }
 }

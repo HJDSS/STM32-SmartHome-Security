@@ -250,7 +250,7 @@ void LockManager_OnFunctionKey(int key)
 
         case 'D':
             Security_Set_ArmMode(ARM_MODE_AWAY);
-            BEEP_SoundOn();
+            BEEP_StartPattern(BEEP_PATTERN_INTRUSION);
             SysLog_Add(LOG_EVT_ALARM, "PANIC_KEY");
 #if EN_OV7670_LOCAL
             Capture_Request(CAP_EVT_INTRUSION);

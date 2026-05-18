@@ -59,6 +59,9 @@
 #ifndef APP_LOCK_OPEN_HOLD_MS
 #define APP_LOCK_OPEN_HOLD_MS      3000u
 #endif
+#ifndef APP_FINGER_POLL_MS
+#define APP_FINGER_POLL_MS         200u
+#endif
 
 #ifndef APP_STAT_REPORT_MS
 #define APP_STAT_REPORT_MS         30000u
