@@ -21,6 +21,7 @@
 #include "esp8266_tls.h"
 #include "linkage.h"
 #include "capture_task.h"
+#include "Capture.h"
 #include "app_types.h"
 #include "app_params.h"
 #include "syslog.h"
@@ -39,7 +40,7 @@
 #define STK_NET         640u
 #endif
 #ifndef STK_LOG
-#define STK_LOG         320u
+#define STK_LOG         1024u
 #endif
 #ifndef PRIO_LOCK
 #define PRIO_LOCK       5u
@@ -54,7 +55,7 @@
 #define PRIO_NET        4u
 #endif
 #ifndef PRIO_LOG
-#define PRIO_LOG        1u
+#define PRIO_LOG        3u
 #endif
 
 static sensor_state_t g_sensor;
@@ -118,34 +119,10 @@ void IPC_NotifyCaptureReq(void)
 static void Task_Lock(void *arg)
 {
     (void)arg;
-#if EN_AS608
-    uint8_t fp_poll_cnt = 0;
-#endif
     for (;;)
     {
         KeyboardSM_Tick();
         LockManager_Tick();
-#if EN_AS608
-        fp_poll_cnt++;
-        if (fp_poll_cnt >= 10u)  /* 10 * 20ms = 200ms polling interval */
-        {
-            fp_poll_cnt = 0u;
-            {
-                unsigned short match = AS608_Find_Fingerprint();
-                if (match > 0u && match != (unsigned short)0xFFFEu)
-                {
-                    RELAY = 0;
-                    RELAY_TIME = 15;
-                    OLED_ShowString(0, 16, "FP UNLOCK OK    ", 16);
-                    Linkage_OnUnlock(UNLOCK_SRC_FINGER);
-                    SysLog_Add(LOG_EVT_CONFIG, "FP_UNLOCK");
-                    arm_mode = ARM_MODE_DISARM;
-                    security_mode = 0u;
-                    LockManager_ClearBruteAlarm();
-                }
-            }
-        }
-#endif
         WDG_Mark(WDG_SRC_ALARM);
         vTaskDelay(pdMS_TO_TICKS(20u));
     }
@@ -191,6 +168,7 @@ static void Task_Sensor(void *arg)
         {
             last_mq2 = now;
             mq2_adc_value = MQ2_Read_ADC_Filter();
+            MQ2_UpdateBaseline(mq2_adc_value);
             xSemaphoreTake(s_sensor_mtx, portMAX_DELAY);
             g_sensor.mq2_adc = mq2_adc_value;
             g_sensor.mq2_alarm = MQ2_Check_Alarm(mq2_adc_value);
@@ -387,6 +365,8 @@ static void Task_Log(void *arg)
     (void)arg;
     for (;;)
     {
+        WDG_Mark(WDG_SRC_SYSMON);
+
         /* IPC: 从告警队列取事件并写 syslog */
         if (s_alarm_q != NULL)
         {
@@ -401,9 +381,30 @@ static void Task_Log(void *arg)
                     SysLog_Add(LOG_EVT_ALARM, "Q_BOTH");
             }
         }
-        WDG_Mark(WDG_SRC_SYSMON);
+
+        /* 指纹轮询：每 200ms 一次，匹配则解锁 */
+#if EN_AS608
+        {
+            unsigned short match = AS608_Find_Fingerprint();
+            if (match > 0u && match != (unsigned short)0xFFFEu)
+            {
+                RELAY = 0;
+                RELAY_TIME = 15;
+                OLED_ShowString(0, 16, "FP UNLOCK OK    ", 16);
+                Linkage_OnUnlock(UNLOCK_SRC_FINGER);
+                SysLog_Add(LOG_EVT_CONFIG, "FP_UNLOCK");
+                arm_mode = ARM_MODE_DISARM;
+                security_mode = 0u;
+                LockManager_ClearBruteAlarm();
+            }
+        }
+#endif
+
+        /* 抓拍轮询 — FreeRTOS 环境下替代主循环中的 Bare_CapturePoll */
+        Bare_CapturePoll();
+
         WDG_Pump();
-        vTaskDelay(pdMS_TO_TICKS(1000u));
+        vTaskDelay(pdMS_TO_TICKS(200u));
     }
 }
 

@@ -242,6 +242,7 @@ static void app_poll_sensors(void)
     {
         s_mq2_ms = now;
         mq2_adc_value = MQ2_Read_ADC_Filter();
+        MQ2_UpdateBaseline(mq2_adc_value);
         g_sensor.mq2_adc = mq2_adc_value;
         if(mq2_adc_value > 4095u)
         {
