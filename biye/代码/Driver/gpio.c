@@ -14,6 +14,8 @@ void BEEP_AND_RELAY_GPIO_Init(void)
 
 	GPIO_InitStructure.GPIO_Pin = BOARD_DOOR_LOCK_PIN;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD;
+	/* OD: 门锁继电器模块通常为5V驱动，OD+外部上拉实现3.3V→5V电平匹配；
+	   OD低电平时sink电流更大，确保继电器可靠吸合 */
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(BOARD_DOOR_LOCK_PORT, &GPIO_InitStructure);
 	GPIO_ResetBits(BOARD_DOOR_LOCK_PORT, BOARD_DOOR_LOCK_PIN);
@@ -25,6 +27,7 @@ void BEEP_AND_RELAY_GPIO_Init(void)
 
 	GPIO_InitStructure.GPIO_Pin = BOARD_GAS_VALVE_RELAY_PIN;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	/* PP: 燃气阀继电器驱动电路为高阻输入，推挽直接驱动无需外部上拉 */
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(BOARD_GAS_VALVE_RELAY_PORT, &GPIO_InitStructure);
 
