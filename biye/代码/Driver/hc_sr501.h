@@ -30,6 +30,7 @@ void HC_SR501_Init(void);
 void HC_SR501_EXTI_Init(void);
 u8 HC_SR501_Read_Level(void);
 u8 HC_SR501_Poll_Triggered(void);
+u8 HC_SR501_IsValidTrigger(uint32_t now_ms);
 u8 HC_SR501_IRQHandler_GetFlag(void);
 void HC_SR501_IRQHandler_ClearFlag(void);
 

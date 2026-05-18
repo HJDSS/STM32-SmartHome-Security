@@ -10,6 +10,7 @@
 #include "app_params.h"
 #include "gpio.h"
 #include "linkage.h"
+#include "lock_manager.h"
 
 extern volatile u8 RELAY_TIME;
 extern volatile u32 g_last_cmd_received_tick;
@@ -106,9 +107,17 @@ static void OneNET_Process_Remote_Ctrl(void)
     {
         if(Ctrl_Door != 0u)
         {
-            RELAY = 0;
-            RELAY_TIME = APP_LOCK_OPEN_HOLD_TICKS;
-            Linkage_OnUnlock(UNLOCK_SRC_REMOTE);
+            /* 🟡1: 远程开锁前检查本地安全状态 */
+            if(LockManager_IsPwdLocked() || LockManager_IsBruteAlarm())
+            {
+                Net_LogSimple("[NET] remote unlock denied: locked/brute");
+            }
+            else
+            {
+                RELAY = 0;
+                RELAY_TIME = APP_LOCK_OPEN_HOLD_TICKS;
+                Linkage_OnUnlock(UNLOCK_SRC_REMOTE);
+            }
         }
         s_last_ctrl_door = Ctrl_Door;
     }
@@ -765,6 +774,28 @@ void OneNET_Publish_Data(u8 temp, u8 humi, u16 gas, u8 door, u8 arm, u8 alarm, u
 #endif
 }
 
+/* 🟡10: 异常告警即时推送 — 独立于5秒周期上报，事件驱动 */
+void OneNET_Publish_Alarm(const char *alarm_type)
+{
+#if ONENET_MQTT_ENABLE
+    char topic[120];
+    char payload[256];
+    u32 tick;
+    if (alarm_type == NULL) return;
+    if (ESP8266_Online_Flag == 0u) return;
+    tick = (u32)Bare_GetTickMs();
+    sprintf(topic, "$sys/%s/%s/thing/property/post",
+            ONENET_PRODUCT_ID, ONENET_DEVICE_NAME);
+    sprintf(payload,
+            "{\"id\":\"alarm%lu\",\"version\":\"1.0\",\"params\":{\"alarm_event\":{\"value\":\"%s\"},\"alarm_ts\":{\"value\":%lu}}}",
+            (unsigned long)tick, alarm_type, (unsigned long)tick);
+    OneNET_AT_Mqtt_PublishRaw(topic, payload, (u16)strlen(payload));
+    LOG_NET("alarm push: %s", alarm_type);
+#else
+    (void)alarm_type;
+#endif
+}
+
 u8 OneNET_PropertySetPending(void)
 {
     return s_is_property_set;
@@ -798,8 +829,11 @@ void OneNET_Parse_Cmd(void)
     const char *param_src;
     unsigned cmd_id = 0u;
     unsigned cmd_ts = 0u;
-    static unsigned last_cmd_id = 0u;
-    static unsigned last_cmd_ts = 0u;
+    /* 🟡3: 环形缓冲区去重替代单槽, APP_CMD_DEDUP_RING=16, APP_CMD_STALE_MS=60s */
+    static unsigned s_dedup_id[APP_CMD_DEDUP_RING];
+    static unsigned s_dedup_ts[APP_CMD_DEDUP_RING];
+    static u8 s_dedup_head = 0u;
+    static u8 s_dedup_count = 0u;
     unsigned i;
 
     if(Uart2_Buf[0] == 0) return;
@@ -815,13 +849,29 @@ void OneNET_Parse_Cmd(void)
         {
             char *pt = strstr((char *)scan, "\"ts\"");
             if(pt != NULL) (void)sscanf(pt, "\"ts\":%u", &cmd_ts);
-            if(cmd_id == last_cmd_id && cmd_ts == last_cmd_ts)
+
+            /* 🟡3: 环冲去重 — 扫描已有条目，匹配则拒绝 */
             {
-                Net_LogSimple("[NET] dedup duplicate cmd");
-                return;
+                unsigned now_ts = (unsigned)Bare_GetTickMs();
+                u8 j;
+                for (j = 0u; j < s_dedup_count; j++)
+                {
+                    u8 idx = (u8)((s_dedup_head + APP_CMD_DEDUP_RING - s_dedup_count + j) % APP_CMD_DEDUP_RING);
+                    if ((u32)(now_ts - s_dedup_ts[idx]) > (u32)APP_CMD_STALE_MS)
+                        continue; /* 过期条目跳过 */
+                    if (s_dedup_id[idx] == cmd_id && s_dedup_ts[idx] == cmd_ts)
+                    {
+                        Net_LogSimple("[NET] dedup duplicate cmd");
+                        return;
+                    }
+                }
+                /* 写入环冲 */
+                s_dedup_id[s_dedup_head] = cmd_id;
+                s_dedup_ts[s_dedup_head] = (unsigned)Bare_GetTickMs();
+                s_dedup_head = (u8)((s_dedup_head + 1u) % APP_CMD_DEDUP_RING);
+                if (s_dedup_count < APP_CMD_DEDUP_RING)
+                    s_dedup_count++;
             }
-            last_cmd_id = cmd_id;
-            last_cmd_ts = cmd_ts;
         }
     }
 

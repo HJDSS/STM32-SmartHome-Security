@@ -1,5 +1,6 @@
 #include "hc_sr501.h"
 #include "delay.h"
+#include "app_params.h"
 /* EXTI 结构体/宏定义来自 stm32f10x_exti.h（Keil C89/老版库需显式 include） */
 #include "stm32f10x_exti.h"
 
@@ -10,6 +11,11 @@
 #endif
 
 volatile u8 g_hc_sr501_irq_flag = 0;
+
+/* 🟡11: 三段式误触发抑制状态 */
+static uint32_t s_pir_glitch_since_ms = 0u;
+static uint32_t s_pir_lockout_until_ms = 0u;
+static u8 s_pir_in_glitch = 0u;
 
 void HC_SR501_Init(void)
 {
@@ -78,6 +84,42 @@ u8 HC_SR501_Poll_Triggered(void)
         debounce_cnt = 0;
     }
     return 0;
+}
+
+/* 🟡11: 三段式误触发抑制 — 论文 §4.2 */
+u8 HC_SR501_IsValidTrigger(uint32_t now_ms)
+{
+    u8 level = HC_SR501_Poll_Triggered();
+
+    /* Stage 3: 冷却锁定期内忽略所有触发 */
+    if (s_pir_lockout_until_ms != 0u)
+    {
+        if (now_ms < s_pir_lockout_until_ms)
+            return 0u;
+        s_pir_lockout_until_ms = 0u;
+    }
+
+    if (level)
+    {
+        if (!s_pir_in_glitch)
+        {
+            s_pir_in_glitch = 1u;
+            s_pir_glitch_since_ms = now_ms;
+        }
+        /* Stage 1+2: 毛刺抑制+最小有效脉宽 — 高电平需持续≥60+200ms */
+        if ((now_ms - s_pir_glitch_since_ms) >= (APP_PIR_GLITCH_REJECT_MS + APP_PIR_MIN_ACTIVE_MS))
+        {
+            s_pir_in_glitch = 0u;
+            s_pir_lockout_until_ms = now_ms + APP_PIR_LOCKOUT_MS;
+            return 1u;  /* 有效触发 */
+        }
+    }
+    else
+    {
+        s_pir_in_glitch = 0u;
+    }
+
+    return 0u;
 }
 
 u8 HC_SR501_IRQHandler_GetFlag(void)

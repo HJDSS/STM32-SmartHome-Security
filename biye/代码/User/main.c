@@ -207,7 +207,6 @@ static void app_poll_sensors(void)
 {
     static u32 s_dht_ms = 0;
     static u32 s_mq2_ms = 0;
-    static u32 s_pir_quiet_until = 0u;
     static u32 s_pir_low_since = 0u;
     static u8 s_dht_was_ok = 1u;
     static u8 s_dht_fail_streak = 0u;
@@ -334,30 +333,29 @@ static void app_poll_sensors(void)
         s_mq2_was_alarm = g_sensor.mq2_alarm;
     }
 
-    if(HC_SR501_IRQHandler_GetFlag())
+    /* 🟡11: 三段式误触发抑制 */
     {
-        HC_SR501_IRQHandler_ClearFlag();
-        g_pir_total_triggers++;
-        s_pir_low_since = 0u;
-        if(arm_mode == ARM_MODE_DISARM)
+        u8 irq_flag = HC_SR501_IRQHandler_GetFlag();
+        if(irq_flag) HC_SR501_IRQHandler_ClearFlag();
+        (void)irq_flag; /* EXTI 仅作唤醒，判定由 IsValidTrigger 完成 */
+        if(HC_SR501_IsValidTrigger(now))
         {
-            g_false_alarm_count++;
-            SysLog_Add(LOG_EVT_CONFIG, "PIR_FALSE_ALARM");
-            s_pir_quiet_until = now + (u32)APP_PIR_SUPPRESS_MS;
-            LOG_SENSOR("PIR suppress");
-        }
-        if((s32)(now - s_pir_quiet_until) >= 0)
-        {
-            if(arm_mode != ARM_MODE_DISARM)
+            g_pir_total_triggers++;
+            s_pir_low_since = 0u;
+            if(arm_mode == ARM_MODE_DISARM)
+            {
+                g_false_alarm_count++;
+                SysLog_Add(LOG_EVT_CONFIG, "PIR_FALSE_ALARM");
+                LOG_SENSOR("PIR suppressed (disarmed)");
+            }
+            else
+            {
                 g_intrusion_confirm++;
-            g_sensor.pir_alarm = 1u;
-        }
-        else
-        {
-            s_pir_quiet_until = now + (u32)APP_PIR_SUPPRESS_MS;
+                g_sensor.pir_alarm = 1u;
+            }
         }
     }
-    else if(!HC_SR501_Poll_Triggered())
+    if(!HC_SR501_Poll_Triggered())
     {
         if(g_sensor.pir_alarm)
         {

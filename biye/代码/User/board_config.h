@@ -616,17 +616,15 @@
    APP_PIR_MIN_ACTIVE_MS   (200ms)  — 最小有效脉宽，论文 §4.2.2
    APP_PIR_LOCKOUT_MS      (3000ms) — 冷却锁定期，论文 §4.2.3
    当前全部注释，后续按需解注启用 */
-/* NOTE: reserved for future implementation
 #ifndef APP_PIR_GLITCH_REJECT_MS
-#define APP_PIR_GLITCH_REJECT_MS        60u
+#define APP_PIR_GLITCH_REJECT_MS        60u    /* 论文 §4.2.1 毛刺过滤：短于60ms的脉冲忽略 */
 #endif
 #ifndef APP_PIR_MIN_ACTIVE_MS
-#define APP_PIR_MIN_ACTIVE_MS           200u
+#define APP_PIR_MIN_ACTIVE_MS           200u   /* 论文 §4.2.2 最小有效脉宽：高电平≥200ms才接受 */
 #endif
 #ifndef APP_PIR_LOCKOUT_MS
-#define APP_PIR_LOCKOUT_MS              3000u
+#define APP_PIR_LOCKOUT_MS              3000u  /* 论文 §4.2.3 冷却锁定期：触发后3000ms内忽略新触发 */
 #endif
-*/
 
 /* ---------- M5 DHT11/22 最小二乘法校准系数（论文 §3.2 固化 Q15 定点）---------- */
 /* NOTE: reserved for future implementation — DHT11 当前使用原始读数，未启用最小二乘校准
@@ -741,14 +739,12 @@ static inline u8 Fusion_IsHighConfidence(u8 epir, u8 ecam, u8 eacc)
 */
 
 /* ---------- M9 MQTT 命令幂等去重 + AES-128（论文 §6.3）---------- */
-/* NOTE: reserved — 幂等去重环形缓冲区和过期时间，当前 OneNET 命令处理为逐条即时执行
 #ifndef APP_CMD_DEDUP_RING
-#define APP_CMD_DEDUP_RING              16u
+#define APP_CMD_DEDUP_RING              16u   /* 命令幂等去重环形缓冲区条目数 */
 #endif
 #ifndef APP_CMD_STALE_MS
-#define APP_CMD_STALE_MS                60000u
+#define APP_CMD_STALE_MS                60000u /* 去重条目过期时间(ms) */
 #endif
-*/
 #ifndef APP_SECURE_AES_ENABLE
 #define APP_SECURE_AES_ENABLE           1     /* AES-128 加密存储 — secure_store.c */
 #endif

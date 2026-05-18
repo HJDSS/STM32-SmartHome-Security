@@ -10,6 +10,7 @@ void ESP8266_EN_GPIO_Init(void);
 
 void OneNET_Parse_Cmd(void);
 void OneNET_Publish_Data(u8 temp, u8 humi, u16 gas, u8 door, u8 arm, u8 alarm, u8 led);
+void OneNET_Publish_Alarm(const char *alarm_type);
 
 u8 OneNET_PropertySetPending(void);
 const char *OneNET_PropertySetPayload(void);

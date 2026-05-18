@@ -6,6 +6,7 @@
 #include "syslog.h"
 #include "gpio.h"
 #include "oled.h"
+#include "esp8266_tls.h"
 
 extern u8 security_mode;
 extern u8 security_alarm;
@@ -53,6 +54,11 @@ void Linkage_MQTT_Report(char *msg)
     if(msg==NULL) return;
     uart1_SendStr(msg);
     uart1_SendStr("\r\n");
+    /* 🟡10: 告警消息同时即时推送至 OneNET 云端 */
+    if(strstr(msg, "ALARM:") != NULL)
+    {
+        OneNET_Publish_Alarm(msg);
+    }
 #else
     (void)msg;
 #endif

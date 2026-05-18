@@ -136,7 +136,6 @@ static void Task_Sensor(void *arg)
     uint32_t last_dht = 0;
     uint32_t last_mq2 = 0;
     static u8 s_mq2_was_alarm = 0u;
-    static uint32_t s_pir_quiet_until = 0u;
     static uint32_t s_pir_low_since = 0u;
     static uint32_t s_brute_beep_until = 0u;
 
@@ -193,27 +192,26 @@ static void Task_Sensor(void *arg)
             s_mq2_was_alarm = g_sensor.mq2_alarm;
         }
 
-        /* PIR 检测 —— 二进制信号量替代轮询 */
-        if (xSemaphoreTake(s_pir_sem, pdMS_TO_TICKS(100)) == pdTRUE)
+        /* PIR 检测 —— 三段式误触发抑制 (🟡11) + 二进制信号量唤醒 */
         {
-            g_pir_total_triggers++;
-            s_pir_low_since = 0u;
-            if (arm_mode == ARM_MODE_DISARM)
+            uint32_t now_ms = (uint32_t)xTaskGetTickCount() * portTICK_PERIOD_MS;
+            /* 信号量用于即时唤醒，实际判定由 HC_SR501_IsValidTrigger 完成 */
+            (void)xSemaphoreTake(s_pir_sem, 0);
+            if (HC_SR501_IsValidTrigger(now_ms))
             {
-                g_false_alarm_count++;
-                s_pir_quiet_until = now + pdMS_TO_TICKS(APP_PIR_SUPPRESS_MS);
-            }
-            if ((int32_t)(now - s_pir_quiet_until) >= 0)
-            {
-                if (arm_mode != ARM_MODE_DISARM)
+                g_pir_total_triggers++;
+                s_pir_low_since = 0u;
+                if (arm_mode == ARM_MODE_DISARM)
+                {
+                    g_false_alarm_count++;
+                }
+                else
+                {
                     g_intrusion_confirm++;
-                xSemaphoreTake(s_sensor_mtx, portMAX_DELAY);
-                g_sensor.pir_alarm = 1u;
-                xSemaphoreGive(s_sensor_mtx);
-            }
-            else
-            {
-                s_pir_quiet_until = now + pdMS_TO_TICKS(APP_PIR_SUPPRESS_MS);
+                    xSemaphoreTake(s_sensor_mtx, portMAX_DELAY);
+                    g_sensor.pir_alarm = 1u;
+                    xSemaphoreGive(s_sensor_mtx);
+                }
             }
         }
         if (!HC_SR501_Poll_Triggered())
