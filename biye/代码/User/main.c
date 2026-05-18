@@ -36,6 +36,7 @@ volatile u8 ReInputEn = 0;
 
 u8 security_mode = 0;
 u8 security_alarm = 0;
+security_fsm_state_t g_security_state = SEC_DISARMED;  /* 🟡6: 安防FSM状态 */
 u8 ui_busy = 0;
 arm_mode_t arm_mode = ARM_MODE_DISARM;
 
@@ -378,7 +379,7 @@ static void app_report_stats(void)
     s_last_ms = now;
     LOG_STAT("false_alarm=%lu reconnect=%lu replay=%u sd_fail=%u run_ex=%lu "
              "pwd_att=%lu pwd_ok=%lu fp_att=%lu fp_ok=%lu "
-             "pir_tot=%lu intr_ok=%lu cap_att=%u cap_ok=%u cap_q_drop=%u cap_q_ok=%u cap_q_fail=%u "
+             "pir_tot=%lu intr_ok=%lu cap_att=%u cap_ok=%u cap_vfail=%u cap_q_drop=%u cap_q_ok=%u cap_q_fail=%u "
              "alarm_lat=%lu cmd_lat=%lu uptime=%lu",
              (unsigned long)g_false_alarm_count,
              (unsigned long)g_net_reconnect_count,
@@ -393,6 +394,7 @@ static void app_report_stats(void)
              (unsigned long)g_intrusion_confirm,
              (unsigned)g_cap_total_attempts,
              (unsigned)g_cap_success_count,
+             (unsigned)g_cap_validation_fail_count,
              (unsigned)g_cap_q_drop,
              (unsigned)g_cap_q_flush_ok,
              (unsigned)g_cap_q_flush_fail,
@@ -417,7 +419,7 @@ static void app_export_stats(void)
             ",\"pwd_att\":%lu,\"pwd_ok\":%lu"
             ",\"fp_att\":%lu,\"fp_ok\":%lu"
             ",\"pir_tot\":%lu,\"intr_ok\":%lu"
-            ",\"cap_att\":%u,\"cap_ok\":%u,\"cap_q_drop\":%u,\"cap_q_ok\":%u,\"cap_q_fail\":%u"
+            ",\"cap_att\":%u,\"cap_ok\":%u,\"cap_vfail\":%u,\"cap_q_drop\":%u,\"cap_q_ok\":%u,\"cap_q_fail\":%u"
             ",\"alarm_lat_ms\":%lu,\"cmd_lat_ms\":%lu"
             ",\"uptime_s\":%lu"
             "}",
@@ -435,6 +437,7 @@ static void app_export_stats(void)
             (unsigned long)g_intrusion_confirm,
             (unsigned)g_cap_total_attempts,
             (unsigned)g_cap_success_count,
+            (unsigned)g_cap_validation_fail_count,
             (unsigned)g_cap_q_drop,
             (unsigned)g_cap_q_flush_ok,
             (unsigned)g_cap_q_flush_fail,
@@ -499,7 +502,7 @@ static void app_poll_alarm_and_act(void)
             {
                 /* Multi-sensor fusion scoring - thesis sec 4.4 */
                 u8 epir = 100u;
-                u8 ecam = g_cap_evt_pending ? 50u : 0u;
+                u8 ecam = g_cap_last_ok ? 60u : (g_cap_evt_pending ? 30u : 0u); /* 🟡12: 结果驱动 */
                 u8 eacc = (alarm == ALARM_BOTH) ? 80u : 0u;
 
                 if (Fusion_IsHighConfidence(epir, ecam, eacc))
@@ -536,6 +539,16 @@ static void app_poll_alarm_and_act(void)
     }
 
     OLED_View_ShowAlarm(alarm);
+
+    /* 🟡6: 安防FSM状态更新 */
+    if (security_alarm)
+        g_security_state = SEC_ALARMING;
+    else if (alarm != ALARM_NONE)
+        g_security_state = SEC_TRIGGERED;
+    else if (security_mode)
+        g_security_state = SEC_ARMED;
+    else
+        g_security_state = SEC_DISARMED;
 }
 
 static void app_poll_net(void)

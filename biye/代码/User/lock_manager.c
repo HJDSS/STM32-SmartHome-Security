@@ -35,6 +35,7 @@ static u8 pwd_equal_6(const u8 *a, const u8 *b)
 void LockManager_Init(void)
 {
     s_lock.user_level = USER_NONE;
+    s_lock.state = DOOR_IDLE;
     s_lock.armed = 0;
     s_lock.relay_on = 0;
     s_lock.pwd_failed_count = 0;
@@ -45,6 +46,19 @@ void LockManager_Init(void)
     s_lock.enroll_pending = 0u;
     s_lock.brute_alarm = 0u;
     s_lock.brute_alarm_sent = 0u;
+}
+
+/* 🟡5: 从标志位推导形式化 FSM 状态 */
+static door_fsm_state_t LockManager_DeriveState(void)
+{
+    if (s_lock.brute_alarm)  return DOOR_LOCKOUT;
+    if (s_lock.pwd_locked)   return DOOR_LOCKOUT;
+    if (s_lock.relay_on)     return DOOR_OPEN;
+    if (s_lock.pwd_chg_state || s_lock.enroll_pending)
+        return DOOR_ACQUIRE;
+    if (s_lock.user_level != USER_NONE)
+        return DOOR_OPEN;  /* 管理员已认证但未开锁→视为已开锁态 */
+    return DOOR_IDLE;
 }
 
 u8 LockManager_IsBruteAlarm(void)
@@ -92,6 +106,7 @@ void LockManager_OnConfirm(const keypad_input_t *in)
         s_lock.brute_alarm = 0u;
         RELAY = 0;
         RELAY_TIME = APP_LOCK_OPEN_HOLD_TICKS;
+        s_lock.state = DOOR_OPEN;  /* 🟡5: 用户密码正确→OPEN */
         OLED_ShowString(0, 16, "UNLOCK OK       ", 16);
         Linkage_OnUnlock(UNLOCK_SRC_PWD);
     }
@@ -106,6 +121,7 @@ void LockManager_OnConfirm(const keypad_input_t *in)
         s_lock.brute_alarm = 0u;
         RELAY = 0;
         RELAY_TIME = APP_LOCK_OPEN_HOLD_TICKS;
+        s_lock.state = DOOR_OPEN;  /* 🟡5: 管理员密码正确→OPEN */
         OLED_ShowString(0, 16, "ADMIN MODE      ", 16);
         Linkage_OnUnlock(UNLOCK_SRC_PWD);
     }
@@ -116,6 +132,7 @@ void LockManager_OnConfirm(const keypad_input_t *in)
         if(s_lock.pwd_failed_count >= APP_LOCK_BRUTE_MAX)
         {
             s_lock.brute_alarm = 1u;
+            s_lock.state = DOOR_LOCKOUT;  /* 🟡5: 暴力告警→LOCKOUT */
             if(!s_lock.brute_alarm_sent)
             {
                 s_lock.brute_alarm_sent = 1u;
@@ -126,6 +143,7 @@ void LockManager_OnConfirm(const keypad_input_t *in)
         else if(s_lock.pwd_failed_count >= APP_LOCK_MAX_FAIL)
         {
             s_lock.pwd_locked = 1u;
+            s_lock.state = DOOR_LOCKOUT;  /* 🟡5: 密码锁定→LOCKOUT */
             s_lock.pwd_lock_until_ms = Bare_GetTickMs() + APP_LOCK_LOCKOUT_MS;
             OLED_ShowString(0, 32, "KEYPAD LOCKED   ", 16);
         }
@@ -318,4 +336,7 @@ void LockManager_Tick(void)
             }
         }
     }
+
+    /* 🟡5: 每次 Tick 结束时更新 FSM 状态 */
+    s_lock.state = LockManager_DeriveState();
 }

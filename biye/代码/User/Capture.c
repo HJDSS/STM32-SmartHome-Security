@@ -52,6 +52,8 @@ static FATFS s_fatfs;
 static u8 s_fat_mounted;
 volatile u16 g_cap_replay_count = 0u;
 volatile u16 g_cap_sd_write_fail_count = 0u;
+volatile u8  g_cap_last_ok = 0u;            /* 🟡12: 最近一次抓拍是否成功 */
+volatile u16 g_cap_validation_fail_count = 0u; /* 🟡12: BMP文件大小校验失败计数 */
 extern volatile u16 g_cap_total_attempts;
 extern volatile u16 g_cap_success_count;
 #define CAP_OFFLINE_Q_DEPTH  ((u8)APP_CAP_OFFLINE_Q_DEPTH)
@@ -285,6 +287,7 @@ static void capture_one_to_sd(void)
     if(fr == FR_OK)
     {
         g_cap_success_count++;
+        g_cap_last_ok = 1u;  /* 🟡12: 抓拍成功→融合评分可参考 */
         SysLog_Add(LOG_EVT_CONFIG, "CAP_END_OK");
         LOG_SD("bmp save ok");
         Capture_OnSaved(name);
@@ -292,6 +295,7 @@ static void capture_one_to_sd(void)
     else
     {
         g_cap_sd_write_fail_count++;
+        g_cap_last_ok = 0u;
         SysLog_Add(LOG_EVT_ALARM, "CAP_SD_WRITE_FAIL");
         SysLog_Add(LOG_EVT_ALARM, "CAP_END_FAIL");
         LOG_SD("bmp save fail");
@@ -388,6 +392,7 @@ u8 Capture_LocalSnapshot(void)
         (void)f_close(&fp);
         (void)f_unlink(name);
         g_cap_sd_write_fail_count++;
+        g_cap_last_ok = 0u;  /* 🟡12 */
         SysLog_Add(LOG_EVT_ALARM, "CAP_SD_WRITE_FAIL");
         OLED_View_ToastRowAB("CAP WRITE FAIL  ", 2000u);
         g_capture_busy = 0u;
@@ -406,6 +411,7 @@ u8 Capture_LocalSnapshot(void)
     }
     else if(f_stat(name, &fno) != FR_OK || (FSIZE_t)fno.fsize != (FSIZE_t)BMP_FILE_SIZE)
     {
+        g_cap_validation_fail_count++;  /* 🟡12: 校验失败独立计数 */
         SysLog_Add(LOG_EVT_ALARM, "CAP_L_SIZE_BAD");
         (void)f_unlink(name);
         ok = 0u;
@@ -414,12 +420,14 @@ u8 Capture_LocalSnapshot(void)
     if(!ok)
     {
         g_cap_sd_write_fail_count++;
+        g_cap_last_ok = 0u;  /* 🟡12 */
         OLED_View_ToastRowAB("CAP SAVE FAIL   ", 2000u);
         g_capture_busy = 0u;
         return 0u;
     }
 
     g_cap_success_count++;
+    g_cap_last_ok = 1u;  /* 🟡12 */
     SysLog_Add(LOG_EVT_CONFIG, "CAP_END_OK");
     Capture_OnSaved(name);
     g_capture_busy = 0u;

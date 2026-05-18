@@ -71,6 +71,7 @@ static SemaphoreHandle_t   s_pir_sem;
 
 extern u8 security_mode;
 extern u8 security_alarm;
+extern security_fsm_state_t g_security_state;  /* 🟡6 */
 extern u8 dht11_temp;
 extern u8 dht11_humi;
 extern u16 mq2_adc_value;
@@ -284,7 +285,7 @@ static void Task_Sensor(void *arg)
                     {
                         /* 多传感器融合评分 —— 论文 4.4 */
                         u8 epir = 100u;  /* PIR triggered + debounced */
-                        u8 ecam = g_cap_evt_pending ? 50u : 0u;
+                        u8 ecam = g_cap_last_ok ? 60u : (g_cap_evt_pending ? 30u : 0u); /* 🟡12: 结果驱动 */
                         u8 eacc = (alarm == ALARM_BOTH) ? 80u : 0u;
 
                         if (Fusion_IsHighConfidence(epir, ecam, eacc))
@@ -320,6 +321,16 @@ static void Task_Sensor(void *arg)
             }
 
             OLED_View_ShowAlarm(alarm);
+
+            /* 🟡6: 安防FSM状态更新 */
+            if (security_alarm)
+                g_security_state = SEC_ALARMING;
+            else if (alarm != ALARM_NONE)
+                g_security_state = SEC_TRIGGERED;
+            else if (security_mode)
+                g_security_state = SEC_ARMED;
+            else
+                g_security_state = SEC_DISARMED;
         }
 
         BEEP_Tick10ms();

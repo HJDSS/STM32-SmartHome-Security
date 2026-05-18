@@ -42,6 +42,11 @@ void TIM2_IRQHandler(void)
 		{
 			time_count = 0;
 
+			/* 🟡4: 定时自动锁止 — 非论文描述的"二次驱动"反馈式闭环
+			 * 原因：硬件无门磁/限位开关/电流检测引脚，无法检测锁具状态
+			 * 当前为单次定时锁止：RELAY_TIME递减至0后RELAY=1(失电锁止)
+			 * 若需真正的二次驱动，需接入门磁传感器并置 APP_ACTUATOR_FEEDBACK_ENABLE=1
+			 */
 			if (RELAY_TIME)
 			{
 				RELAY_TIME--;

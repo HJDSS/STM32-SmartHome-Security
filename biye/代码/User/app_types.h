@@ -25,6 +25,26 @@ typedef enum
     ALARM_BOTH = 3
 } alarm_type_t;
 
+/* 🟡5: 门禁五态 FSM — 论文 §5.1 IDLE→ACQUIRE→MATCH→OPEN→LOCKOUT */
+typedef enum
+{
+    DOOR_IDLE    = 0,  /* 空闲，等待输入 */
+    DOOR_ACQUIRE = 1,  /* 采集密码/指纹 */
+    DOOR_MATCH   = 2,  /* 比对中 */
+    DOOR_OPEN     = 3,  /* 门锁打开（含管理员态） */
+    DOOR_LOCKOUT  = 4   /* 锁定（连续失败/暴力告警） */
+} door_fsm_state_t;
+
+/* 🟡6: 安防五态 FSM — 论文 §4.1 DISARMED→ARMED→TRIGGERED→ALARMING→RECOVERY */
+typedef enum
+{
+    SEC_DISARMED  = 0,  /* 撤防 */
+    SEC_ARMED     = 1,  /* 布防（HOME 或 AWAY） */
+    SEC_TRIGGERED = 2,  /* 传感器触发，入口延迟/复核 */
+    SEC_ALARMING  = 3,  /* 确认告警，蜂鸣+抓拍+上报 */
+    SEC_RECOVERY  = 4   /* 告警解除，恢复中 */
+} security_fsm_state_t;
+
 typedef struct
 {
     u8 digits[6];
@@ -45,6 +65,7 @@ typedef struct
 typedef struct
 {
     user_level_t user_level;
+    door_fsm_state_t state;   /* 🟡5: 形式化 FSM 状态 */
     u8 armed;
     u8 relay_on;
     u8 pwd_failed_count;

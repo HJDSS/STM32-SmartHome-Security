@@ -434,6 +434,11 @@
 #define BOARD_MQ2_ALARM_ENABLE          0
 #endif
 
+/* 🟡4: 执行器反馈接口预留 — 当前无硬件反馈引脚(无门磁/限位开关), 默认=0为定时自动锁止 */
+#ifndef APP_ACTUATOR_FEEDBACK_ENABLE
+#define APP_ACTUATOR_FEEDBACK_ENABLE       0u
+#endif
+
 /* 执行器 */
 #define BOARD_DOOR_LOCK_PORT            GPIOC                   /* PC6  门锁继电器（gpio.h 中 RELAY=PCout(6) 须与此一致；旧版误用 PB12 已纠正） */
 #define BOARD_DOOR_LOCK_PIN             GPIO_Pin_6
