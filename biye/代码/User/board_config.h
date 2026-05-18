@@ -503,7 +503,7 @@
  * =============================================================================
  */
 
-/* ---------- M2 IWDG 独立看门狗 ---------- */
+/* ---------- M2 IWDG 独立看门狗（论文 §5.4）---------- */
 #ifndef BOARD_IWDG_ENABLE
 #define BOARD_IWDG_ENABLE               1
 #endif
@@ -514,24 +514,26 @@
 #define BOARD_IWDG_WATCH_SRC_MAX        8
 #endif
 
-/* ---------- M3 FreeRTOS 任务表（论文表 5-x 对齐） ---------- */
+/* ---------- M3 FreeRTOS 任务表（论文 §5.2） ---------- */
+/* 实际任务映射：
+ *   Task_Lock  → SECURITY (PRIO_LOCK=5,  STK_LOCK=512,  tick=20ms)
+ *   Task_Net   → NET      (PRIO_NET=4,   STK_NET=640,   tick=50ms)
+ *   Task_Sensor→ SENSOR   (PRIO_SENSOR=3, STK_SENSOR=384, tick=10ms)
+ *   Task_OLED  → UI       (PRIO_OLED=2,  STK_OLED=256,  tick=100ms) — 见 CAPTURE 保留行
+ *   Task_Log   → SYSMON   (PRIO_LOG=3,   STK_LOG=1024,  tick=200ms)
+ * 注意：fingerprint / capture 无独立 Task，分别内联于 Task_Log 和 Bare_CapturePoll
+ */
 #ifndef APP_TASK_PRIO_SECURITY
 #define APP_TASK_PRIO_SECURITY          5u
 #endif
 #ifndef APP_TASK_PRIO_NET
 #define APP_TASK_PRIO_NET               4u
 #endif
-#ifndef APP_TASK_PRIO_FINGER
-#define APP_TASK_PRIO_FINGER            3u
-#endif
 #ifndef APP_TASK_PRIO_SENSOR
 #define APP_TASK_PRIO_SENSOR            3u
 #endif
-#ifndef APP_TASK_PRIO_CAPTURE
-#define APP_TASK_PRIO_CAPTURE           2u
-#endif
 #ifndef APP_TASK_PRIO_SYSMON
-#define APP_TASK_PRIO_SYSMON            1u
+#define APP_TASK_PRIO_SYSMON            3u   /* 对应 Task_Log PRIO_LOG=3 */
 #endif
 
 #ifndef APP_TASK_STACK_SECURITY
@@ -540,17 +542,11 @@
 #ifndef APP_TASK_STACK_NET
 #define APP_TASK_STACK_NET              640u
 #endif
-#ifndef APP_TASK_STACK_FINGER
-#define APP_TASK_STACK_FINGER           512u
-#endif
 #ifndef APP_TASK_STACK_SENSOR
 #define APP_TASK_STACK_SENSOR           384u
 #endif
-#ifndef APP_TASK_STACK_CAPTURE
-#define APP_TASK_STACK_CAPTURE          768u
-#endif
 #ifndef APP_TASK_STACK_SYSMON
-#define APP_TASK_STACK_SYSMON           320u
+#define APP_TASK_STACK_SYSMON           1024u /* 对应 Task_Log STK_LOG=1024 */
 #endif
 
 #ifndef APP_TASK_PERIOD_SECURITY_MS
@@ -559,27 +555,57 @@
 #ifndef APP_TASK_PERIOD_NET_MS
 #define APP_TASK_PERIOD_NET_MS          100u
 #endif
-#ifndef APP_TASK_PERIOD_FINGER_MS
-#define APP_TASK_PERIOD_FINGER_MS       50u
-#endif
 #ifndef APP_TASK_PERIOD_SENSOR_MS
 #define APP_TASK_PERIOD_SENSOR_MS       200u
 #endif
 #ifndef APP_TASK_PERIOD_SYSMON_MS
-#define APP_TASK_PERIOD_SYSMON_MS       2000u
+#define APP_TASK_PERIOD_SYSMON_MS       200u  /* 对应 Task_Log tick=200ms */
 #endif
 
-#ifndef APP_IPC_ALARM_Q_DEPTH
-#define APP_IPC_ALARM_Q_DEPTH           8u
+/* === 以下为论文预留行，当前无独立 Task 实现 === */
+#ifndef APP_TASK_PRIO_FINGER
+/* NOTE: reserved — fingerprint polling runs inside Task_Log */
+#define APP_TASK_PRIO_FINGER            3u
 #endif
+#ifndef APP_TASK_STACK_FINGER
+/* NOTE: reserved — fingerprint polling runs inside Task_Log */
+#define APP_TASK_STACK_FINGER           512u
+#endif
+#ifndef APP_TASK_PERIOD_FINGER_MS
+/* NOTE: reserved */
+#define APP_TASK_PERIOD_FINGER_MS       50u
+#endif
+
+#ifndef APP_TASK_PRIO_CAPTURE
+/* NOTE: reserved — OV7670 capture polls within Task_Log via Bare_CapturePoll */
+#define APP_TASK_PRIO_CAPTURE           2u
+#endif
+#ifndef APP_TASK_STACK_CAPTURE
+/* NOTE: reserved — OV7670 capture polls within Task_Log via Bare_CapturePoll */
+#define APP_TASK_STACK_CAPTURE          768u
+#endif
+
+/* ---------- IPC 队列深度（论文 §5.3）---------- */
+#ifndef APP_IPC_ALARM_Q_DEPTH
+#define APP_IPC_ALARM_Q_DEPTH           8u   /* 告警事件队列 — 由 Task_Log 消费 */
+#endif
+/* NOTE: reserved for future implementation — 抓拍队列和命令队列暂未使用独立的 IPC Queue，而是通过 EventGroup 标志位解耦
 #ifndef APP_IPC_CAP_Q_DEPTH
 #define APP_IPC_CAP_Q_DEPTH             4u
 #endif
 #ifndef APP_IPC_CMD_Q_DEPTH
 #define APP_IPC_CMD_Q_DEPTH             6u
 #endif
+*/
 
-/* ---------- M4 PIR 三段式误触发抑制 ---------- */
+/* ---------- M4 PIR 三段式误触发抑制（论文 §4.2）---------- */
+/* 当前 PIR 抑制方案使用 app_params.h 中 APP_PIR_SUPPRESS_MS (3000ms)
+   + APP_PIR_CLEAR_LOW_MS (350ms) 的简化模型，以下三段式参数为论文完整版预留：
+   APP_PIR_GLITCH_REJECT_MS (60ms)  — 毛刺过滤，论文 §4.2.1
+   APP_PIR_MIN_ACTIVE_MS   (200ms)  — 最小有效脉宽，论文 §4.2.2
+   APP_PIR_LOCKOUT_MS      (3000ms) — 冷却锁定期，论文 §4.2.3
+   当前全部注释，后续按需解注启用 */
+/* NOTE: reserved for future implementation
 #ifndef APP_PIR_GLITCH_REJECT_MS
 #define APP_PIR_GLITCH_REJECT_MS        60u
 #endif
@@ -589,8 +615,11 @@
 #ifndef APP_PIR_LOCKOUT_MS
 #define APP_PIR_LOCKOUT_MS              3000u
 #endif
+*/
 
-/* ---------- M5 DHT11/22 最小二乘法校准系数（论文 §3-2 固化 Q15 定点） ---------- */
+/* ---------- M5 DHT11/22 最小二乘法校准系数（论文 §3.2 固化 Q15 定点）---------- */
+/* NOTE: reserved for future implementation — DHT11 当前使用原始读数，未启用最小二乘校准
+   系数含义: T_cal = (AT*raw + BT)/32768, H_cal = (AH*raw + BH)/32768
 #ifndef APP_DHT_CALIB_ENABLE
 #define APP_DHT_CALIB_ENABLE            1
 #endif
@@ -606,70 +635,89 @@
 #ifndef APP_DHT_CALIB_BH_Q15
 #define APP_DHT_CALIB_BH_Q15            13180
 #endif
+*/
 
-/* ---------- M6 MQ-2 中值 + 滑动平均级联 + 温漂补偿 + 变化率双判据 ---------- */
+/* ---------- M6 MQ-2 中值 + 滑动平均级联 + 温漂补偿（论文 §4.3）---------- */
 #ifndef APP_MQ2_MEDIAN_WIN
-#define APP_MQ2_MEDIAN_WIN              5u
+#define APP_MQ2_MEDIAN_WIN              5u   /* 中值滤波窗口 — mq2.c MQ2_Read_ADC_Filter */
 #endif
 #ifndef APP_MQ2_MA_WIN
-#define APP_MQ2_MA_WIN                  8u
+#define APP_MQ2_MA_WIN                  8u   /* 滑动平均窗口 — mq2.c MQ2_Read_ADC_Filter */
 #endif
 #ifndef APP_MQ2_TEMP_K_Q8
-#define APP_MQ2_TEMP_K_Q8               12
+#define APP_MQ2_TEMP_K_Q8               819u /* Q8: 819/256≈3.2 — mq2.c MQ2_ApplyTempComp */
 #endif
 #ifndef APP_MQ2_TEMP_BASE_C
-#define APP_MQ2_TEMP_BASE_C             25
+#define APP_MQ2_TEMP_BASE_C             25   /* 温漂基准 25°C — mq2.c MQ2_ApplyTempComp */
 #endif
+/* NOTE: reserved — 变化率双判据斜率阈值，当前使用自适应基线+滞回锁存替代
 #ifndef APP_MQ2_SLOPE_THRESHOLD
 #define APP_MQ2_SLOPE_THRESHOLD         120u
 #endif
+*/
 
-/* ---------- M7 门禁五态 FSM + AS608 指纹识别任务 ---------- */
+/* ---------- M7 门禁五态 FSM + AS608 指纹识别（论文 §5.1）---------- */
 #ifndef APP_LOCK_MAX_FAIL
-#define APP_LOCK_MAX_FAIL               3u
+#define APP_LOCK_MAX_FAIL               3u      /* 密码最大错误次数（触发锁定）— lock_manager.c */
 #endif
 #ifndef APP_LOCK_LOCKOUT_MS
-#define APP_LOCK_LOCKOUT_MS             30000u
-#endif
-#ifndef APP_LOCK_OPEN_HOLD_MS
-#define APP_LOCK_OPEN_HOLD_MS           3000u
+#define APP_LOCK_LOCKOUT_MS             30000u  /* 密码错误锁定时间 — lock_manager.c */
 #endif
 #ifndef APP_ADMIN_SESSION_MS
-#define APP_ADMIN_SESSION_MS            20000u  /* 管理员窗口默认 20s */
+#define APP_ADMIN_SESSION_MS            20000u  /* 管理员窗口默认 20s — lock_manager.c */
 #endif
 #ifndef APP_ADMIN_SESSION_MAX_MS
-#define APP_ADMIN_SESSION_MAX_MS        60000u  /* 录入/改密期间延长至 60s */
+#define APP_ADMIN_SESSION_MAX_MS        60000u  /* 录入/改密期间延长至 60s — lock_manager.c */
 #endif
 #ifndef APP_LOCK_BRUTE_MAX
-#define APP_LOCK_BRUTE_MAX              5u      /* 暴力破解阈值 */
+#define APP_LOCK_BRUTE_MAX              5u      /* 暴力破解阈值 — lock_manager.c */
 #endif
 #ifndef APP_BRUTE_BEEP_MS
-#define APP_BRUTE_BEEP_MS               3000u
+#define APP_BRUTE_BEEP_MS               3000u   /* 暴力破解蜂鸣时长 — app_rtos.c / main.c */
 #endif
 #ifndef APP_PIR_CLEAR_LOW_MS
-#define APP_PIR_CLEAR_LOW_MS            350u
+#define APP_PIR_CLEAR_LOW_MS            350u    /* PIR 低电平持续确认清除 — app_rtos.c / main.c */
 #endif
-#ifndef APP_PIR_MIN_ACTIVE_MS
-#define APP_PIR_MIN_ACTIVE_MS           200u
+/* NOTE: reserved for future implementation
+#ifndef APP_LOCK_OPEN_HOLD_MS
+#define APP_LOCK_OPEN_HOLD_MS           3000u   // 开锁保持时间（当前由 RELAY_TIME=15 硬编码 1.5s 控制）
 #endif
 #ifndef APP_FINGER_MATCH_SCORE_MIN
-#define APP_FINGER_MATCH_SCORE_MIN      50u
+#define APP_FINGER_MATCH_SCORE_MIN      50u    // 指纹匹配最低得分（当前使用 AS608 库内部阈值）
 #endif
+*/
 
-/* ---------- M8 多传感器融合证据加权评分 ---------- */
+/* ---------- M8 多传感器融合证据加权评分（论文 §4.4）---------- */
+/* 加权评分公式: S = W_PIR*epir + W_CAM*ecam + W_ACC*eacc
+   综合得分 >= THRESHOLD*100 时判为高置信度入侵 — 由 app_rtos.c Task_Sensor 调用 */
 #ifndef APP_FUSION_W_PIR
-#define APP_FUSION_W_PIR                60u
+#define APP_FUSION_W_PIR                50u   /* PIR 证据权重 (归一化至 0-100 分) */
 #endif
-#ifndef APP_FUSION_W_MQ2
-#define APP_FUSION_W_MQ2                70u
+#ifndef APP_FUSION_W_CAM
+#define APP_FUSION_W_CAM                30u   /* 摄像头运动证据权重 */
 #endif
-#ifndef APP_FUSION_W_CAM_MOTION
-#define APP_FUSION_W_CAM_MOTION         40u
+#ifndef APP_FUSION_W_ACC
+#define APP_FUSION_W_ACC                20u   /* 辅助证据权重 (MQ-2 燃气佐证) */
 #endif
-#ifndef APP_FUSION_TRIGGER_SCORE
-#define APP_FUSION_TRIGGER_SCORE        80u
+#ifndef APP_FUSION_THRESHOLD
+#define APP_FUSION_THRESHOLD            50u   /* 高置信度阈值 (50→≥5000为入侵) */
 #endif
 
+/* 多传感器融合评分 —— 论文 §4.4
+   epir: PIR 证据 (0-100), 100 = PIR triggered + debounced
+   ecam: 摄像头证据 (0-100), 50 = capture pending / camera available
+   eacc: 辅助证据 (0-100), 80 = MQ-2 corroboration
+   returns: 1 = high-confidence intrusion, 0 = low confidence */
+static inline u8 Fusion_IsHighConfidence(u8 epir, u8 ecam, u8 eacc)
+{
+    u32 score = (u32)APP_FUSION_W_PIR * (u32)epir
+              + (u32)APP_FUSION_W_CAM * (u32)ecam
+              + (u32)APP_FUSION_W_ACC * (u32)eacc;
+    return (score >= (u32)APP_FUSION_THRESHOLD * 100u) ? 1u : 0u;
+}
+
+/* NOTE: reserved — 场景模式枚举，当前使用 app_types.h 中 arm_mode_t 代替
+   未使用的 SCENE_MODE_NIGHT 为论文 §4.4 中提到的夜间模式预留
 #ifndef SCENE_MODE_HOME
 #define SCENE_MODE_HOME                 0u
 #endif
@@ -679,19 +727,22 @@
 #ifndef SCENE_MODE_NIGHT
 #define SCENE_MODE_NIGHT                2u
 #endif
+*/
 
-/* ---------- M9 MQTT 命令幂等去重 + AES-128 ---------- */
+/* ---------- M9 MQTT 命令幂等去重 + AES-128（论文 §6.3）---------- */
+/* NOTE: reserved — 幂等去重环形缓冲区和过期时间，当前 OneNET 命令处理为逐条即时执行
 #ifndef APP_CMD_DEDUP_RING
 #define APP_CMD_DEDUP_RING              16u
 #endif
 #ifndef APP_CMD_STALE_MS
 #define APP_CMD_STALE_MS                60000u
 #endif
+*/
 #ifndef APP_SECURE_AES_ENABLE
-#define APP_SECURE_AES_ENABLE           1
+#define APP_SECURE_AES_ENABLE           1     /* AES-128 加密存储 — secure_store.c */
 #endif
 
-/* ---------- 断网重连指数退避（论文 §x-x） ---------- */
+/* ---------- 断网重连指数退避（论文 §6.2）---------- */
 #ifndef APP_NET_BACKOFF_INIT_MS
 #define APP_NET_BACKOFF_INIT_MS         1200u   /* 初始退避 1.2s */
 #endif

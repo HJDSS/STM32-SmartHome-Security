@@ -26,6 +26,7 @@
 #include "app_params.h"
 #include "syslog.h"
 #include "as608.h"
+#include "usart1.h"
 
 #ifndef STK_LOCK
 #define STK_LOCK        512u
@@ -75,6 +76,7 @@ extern u8 dht11_humi;
 extern u16 mq2_adc_value;
 extern arm_mode_t arm_mode;
 extern volatile u32 g_false_alarm_count;
+extern volatile u32 g_fusion_high_confidence;
 extern volatile u8 RELAY_TIME;
 
 extern void CLR_Buf2(void);
@@ -168,6 +170,7 @@ static void Task_Sensor(void *arg)
         {
             last_mq2 = now;
             mq2_adc_value = MQ2_Read_ADC_Filter();
+            mq2_adc_value = MQ2_ApplyTempComp(mq2_adc_value, (int16_t)dht11_temp);
             MQ2_UpdateBaseline(mq2_adc_value);
             xSemaphoreTake(s_sensor_mtx, portMAX_DELAY);
             g_sensor.mq2_adc = mq2_adc_value;
@@ -193,6 +196,7 @@ static void Task_Sensor(void *arg)
         /* PIR 检测 —— 二进制信号量替代轮询 */
         if (xSemaphoreTake(s_pir_sem, pdMS_TO_TICKS(100)) == pdTRUE)
         {
+            g_pir_total_triggers++;
             s_pir_low_since = 0u;
             if (arm_mode == ARM_MODE_DISARM)
             {
@@ -201,6 +205,8 @@ static void Task_Sensor(void *arg)
             }
             if ((int32_t)(now - s_pir_quiet_until) >= 0)
             {
+                if (arm_mode != ARM_MODE_DISARM)
+                    g_intrusion_confirm++;
                 xSemaphoreTake(s_sensor_mtx, portMAX_DELAY);
                 g_sensor.pir_alarm = 1u;
                 xSemaphoreGive(s_sensor_mtx);
@@ -257,6 +263,9 @@ static void Task_Sensor(void *arg)
                 u8 is_pir = (alarm == ALARM_PIR || alarm == ALARM_BOTH);
                 u8 is_gas = (alarm == ALARM_GAS || alarm == ALARM_BOTH);
 
+                g_last_alarm_trigger_tick = Bare_GetTickMs();
+                g_last_alarm_action_tick = Bare_GetTickMs();
+
                 /* IPC: 告警事件入队 */
                 if (s_alarm_q != NULL)
                 {
@@ -275,13 +284,27 @@ static void Task_Sensor(void *arg)
                     }
                     else
                     {
-                        BEEP_StartPattern(BEEP_PATTERN_INTRUSION);
-                        Linkage_OnIntrusion();
+                        /* 多传感器融合评分 —— 论文 4.4 */
+                        u8 epir = 100u;  /* PIR triggered + debounced */
+                        u8 ecam = g_cap_evt_pending ? 50u : 0u;
+                        u8 eacc = (alarm == ALARM_BOTH) ? 80u : 0u;
+
+                        if (Fusion_IsHighConfidence(epir, ecam, eacc))
+                        {
+                            BEEP_StartPattern(BEEP_PATTERN_INTRUSION);
+                            Linkage_OnIntrusion();
 #if EN_OV7670_LOCAL
-                        Capture_Request(CAP_EVT_INTRUSION);
-                        IPC_NotifyCaptureReq();
+                            Capture_Request(CAP_EVT_INTRUSION);
+                            IPC_NotifyCaptureReq();
 #endif
-                        SysLog_Add(LOG_EVT_ALARM, "PIR_INTRUSION");
+                            SysLog_Add(LOG_EVT_ALARM, "PIR_INTRUSION");
+                            g_fusion_high_confidence++;
+                        }
+                        else
+                        {
+                            BEEP_StartPattern(BEEP_PATTERN_DOORBELL);
+                            SysLog_Add(LOG_EVT_CONFIG, "PIR_LOW_CONF");
+                        }
                     }
                 }
                 if (is_gas)
@@ -385,9 +408,11 @@ static void Task_Log(void *arg)
         /* 指纹轮询：每 200ms 一次，匹配则解锁 */
 #if EN_AS608
         {
+            g_finger_total_attempts++;
             unsigned short match = AS608_Find_Fingerprint();
             if (match > 0u && match != (unsigned short)0xFFFEu)
             {
+                g_finger_success++;
                 RELAY = 0;
                 RELAY_TIME = 15;
                 OLED_ShowString(0, 16, "FP UNLOCK OK    ", 16);
@@ -403,6 +428,16 @@ static void Task_Log(void *arg)
         /* 抓拍轮询 — FreeRTOS 环境下替代主循环中的 Bare_CapturePoll */
         Bare_CapturePoll();
 
+        /* 指标6: 统计 uptime (每 200ms 迭代一次，计 5 次=1 秒) */
+        {
+            static u8 s_uptime_div = 0u;
+            if (++s_uptime_div >= 5u)
+            {
+                s_uptime_div = 0u;
+                g_uptime_seconds++;
+            }
+        }
+
         WDG_Pump();
         vTaskDelay(pdMS_TO_TICKS(200u));
     }
@@ -411,7 +446,10 @@ static void Task_Log(void *arg)
 void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
 {
     (void)xTask;
-    (void)pcTaskName;
+    SysLog_Add(LOG_EVT_ALARM, "STACK_OVF");
+    UART1_SendStr("[FATAL] StackOverflow: ");
+    UART1_SendStr((char *)pcTaskName);
+    UART1_SendStr("\r\n");
     for (;;)
     {
     }
@@ -419,6 +457,8 @@ void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
 
 void vApplicationMallocFailedHook(void)
 {
+    SysLog_Add(LOG_EVT_ALARM, "MALLOC_FAIL");
+    UART1_SendStr("[FATAL] MallocFailed\r\n");
     for (;;)
     {
     }

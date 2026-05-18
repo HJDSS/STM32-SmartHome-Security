@@ -77,10 +77,13 @@ void LockManager_OnConfirm(const keypad_input_t *in)
     if(in == NULL || in->count != 6)
         return;
 
+    g_pwd_total_attempts++;
+
     FlashStore_ReadPasswords(user_pwd, admin_pwd);
 
     if(pwd_equal_6(in->digits, user_pwd))
     {
+        g_pwd_success++;
         s_lock.user_level = USER_NORMAL;
         s_lock.relay_on = 1;
         s_lock.pwd_failed_count = 0;
@@ -94,6 +97,7 @@ void LockManager_OnConfirm(const keypad_input_t *in)
     }
     else if(pwd_equal_6(in->digits, admin_pwd))
     {
+        g_pwd_success++;
         s_lock.user_level = USER_ADMIN;
         s_lock.relay_on = 1;
         s_lock.pwd_failed_count = 0;

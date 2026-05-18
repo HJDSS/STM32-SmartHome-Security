@@ -12,6 +12,8 @@
 #include "linkage.h"
 
 extern volatile u8 RELAY_TIME;
+extern volatile u32 g_last_cmd_received_tick;
+extern volatile u32 g_last_cmd_completed_tick;
 
 #define ESP_DELAY_MS(ms) delay_ms((u16)(ms))
 
@@ -823,6 +825,8 @@ void OneNET_Parse_Cmd(void)
         }
     }
 
+    g_last_cmd_received_tick = Bare_GetTickMs();
+
     s_is_property_set = 0u;
     s_reply_id[0] = '\0';
     s_payload_snap[0] = '\0';
@@ -957,6 +961,8 @@ void OneNET_Parse_Cmd(void)
         Ctrl_Arm = cmd_arm;
         Security_Set_Mode(Ctrl_Arm);
     }
+    g_last_cmd_completed_tick = Bare_GetTickMs();
+
     if(s_is_property_set && s_reply_id[0] != '\0')
     {
         OneNET_Reply_PropertySet(0);

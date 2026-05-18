@@ -60,6 +60,36 @@ volatile unsigned char g_as608_user_abort = 0u;
 volatile u32 g_false_alarm_count = 0u;
 static volatile u32 g_runtime_exception_count = 0u;
 
+/* ---------- 论文第六章性能指标统计计数器 ---------- */
+
+/* 指标1: 门禁识别准确率 */
+volatile u32 g_pwd_total_attempts = 0;    // total password attempts
+volatile u32 g_pwd_success = 0;           // successful password unlocks
+volatile u32 g_finger_total_attempts = 0; // total fingerprint attempts
+volatile u32 g_finger_success = 0;        // successful fingerprint unlocks
+
+/* 指标2: 入侵检测误报率 */
+volatile u32 g_pir_total_triggers = 0;    // all PIR triggers (armed + disarmed)
+volatile u32 g_intrusion_confirm = 0;     // confirmed intrusions (armed mode)
+
+	/* 多传感器融合高置信度判定次数 (论文 4.4) */
+	volatile u32 g_fusion_high_confidence = 0u;
+
+/* 指标3: 本地告警响应时延 */
+volatile u32 g_last_alarm_trigger_tick = 0;  // PIR trigger timestamp (ms)
+volatile u32 g_last_alarm_action_tick = 0;   // buzzer on timestamp (ms)
+
+/* 指标4: 远程控制响应时延 */
+volatile u32 g_last_cmd_received_tick = 0;   // MQTT command receive timestamp
+volatile u32 g_last_cmd_completed_tick = 0;  // command execution complete timestamp
+
+/* 指标5: 抓拍写入成功率 */
+volatile u16 g_cap_total_attempts = 0;   // total capture attempts
+volatile u16 g_cap_success_count = 0;    // successful SD writes
+
+/* 指标6: 连续运行 */
+volatile u32 g_uptime_seconds = 0;       // system uptime in seconds
+
 void AS608_PollYield(void)
 {
     KeyboardSM_Tick();
@@ -242,6 +272,7 @@ static void app_poll_sensors(void)
     {
         s_mq2_ms = now;
         mq2_adc_value = MQ2_Read_ADC_Filter();
+        mq2_adc_value = MQ2_ApplyTempComp(mq2_adc_value, (int16_t)dht11_temp);
         MQ2_UpdateBaseline(mq2_adc_value);
         g_sensor.mq2_adc = mq2_adc_value;
         if(mq2_adc_value > 4095u)
@@ -306,6 +337,7 @@ static void app_poll_sensors(void)
     if(HC_SR501_IRQHandler_GetFlag())
     {
         HC_SR501_IRQHandler_ClearFlag();
+        g_pir_total_triggers++;
         s_pir_low_since = 0u;
         if(arm_mode == ARM_MODE_DISARM)
         {
@@ -316,6 +348,8 @@ static void app_poll_sensors(void)
         }
         if((s32)(now - s_pir_quiet_until) >= 0)
         {
+            if(arm_mode != ARM_MODE_DISARM)
+                g_intrusion_confirm++;
             g_sensor.pir_alarm = 1u;
         }
         else
@@ -344,30 +378,67 @@ static void app_report_stats(void)
     u32 now = Bare_GetTickMs();
     if((u32)(now - s_last_ms) < (u32)APP_STAT_REPORT_MS) return;
     s_last_ms = now;
-    LOG_STAT("false_alarm=%lu reconnect=%lu replay=%u sd_fail=%u run_ex=%lu",
+    LOG_STAT("false_alarm=%lu reconnect=%lu replay=%u sd_fail=%u run_ex=%lu "
+             "pwd_att=%lu pwd_ok=%lu fp_att=%lu fp_ok=%lu "
+             "pir_tot=%lu intr_ok=%lu cap_att=%u cap_ok=%u "
+             "alarm_lat=%lu cmd_lat=%lu uptime=%lu",
              (unsigned long)g_false_alarm_count,
              (unsigned long)g_net_reconnect_count,
              (unsigned)g_cap_replay_count,
              (unsigned)g_cap_sd_write_fail_count,
-             (unsigned long)g_runtime_exception_count);
+             (unsigned long)g_runtime_exception_count,
+             (unsigned long)g_pwd_total_attempts,
+             (unsigned long)g_pwd_success,
+             (unsigned long)g_finger_total_attempts,
+             (unsigned long)g_finger_success,
+             (unsigned long)g_pir_total_triggers,
+             (unsigned long)g_intrusion_confirm,
+             (unsigned)g_cap_total_attempts,
+             (unsigned)g_cap_success_count,
+             (unsigned long)(g_last_alarm_action_tick > g_last_alarm_trigger_tick
+                ? g_last_alarm_action_tick - g_last_alarm_trigger_tick : 0lu),
+             (unsigned long)(g_last_cmd_completed_tick > g_last_cmd_received_tick
+                ? g_last_cmd_completed_tick - g_last_cmd_received_tick : 0lu),
+             (unsigned long)g_uptime_seconds);
 }
 
 static void app_export_stats(void)
 {
     static u32 s_last_ms = 0u;
-    char line[220];
+    char line[512];
     u32 now = Bare_GetTickMs();
     if((u32)(now - s_last_ms) < (u32)APP_STAT_EXPORT_MS) return;
     s_last_ms = now;
 
     sprintf(line,
-            "{\"tag\":\"STAT_EXPORT\",\"tick\":%lu,\"false_alarm\":%lu,\"reconnect\":%lu,\"replay\":%u,\"sd_fail\":%u,\"run_ex_72h\":%lu}",
+            "{\"tag\":\"STAT_EXPORT\",\"tick\":%lu"
+            ",\"false_alarm\":%lu,\"reconnect\":%lu,\"replay\":%u,\"sd_fail\":%u,\"run_ex_72h\":%lu"
+            ",\"pwd_att\":%lu,\"pwd_ok\":%lu"
+            ",\"fp_att\":%lu,\"fp_ok\":%lu"
+            ",\"pir_tot\":%lu,\"intr_ok\":%lu"
+            ",\"cap_att\":%u,\"cap_ok\":%u"
+            ",\"alarm_lat_ms\":%lu,\"cmd_lat_ms\":%lu"
+            ",\"uptime_s\":%lu"
+            "}",
             (unsigned long)now,
             (unsigned long)g_false_alarm_count,
             (unsigned long)g_net_reconnect_count,
             (unsigned)g_cap_replay_count,
             (unsigned)g_cap_sd_write_fail_count,
-            (unsigned long)g_runtime_exception_count);
+            (unsigned long)g_runtime_exception_count,
+            (unsigned long)g_pwd_total_attempts,
+            (unsigned long)g_pwd_success,
+            (unsigned long)g_finger_total_attempts,
+            (unsigned long)g_finger_success,
+            (unsigned long)g_pir_total_triggers,
+            (unsigned long)g_intrusion_confirm,
+            (unsigned)g_cap_total_attempts,
+            (unsigned)g_cap_success_count,
+            (unsigned long)(g_last_alarm_action_tick > g_last_alarm_trigger_tick
+                ? g_last_alarm_action_tick - g_last_alarm_trigger_tick : 0lu),
+            (unsigned long)(g_last_cmd_completed_tick > g_last_cmd_received_tick
+                ? g_last_cmd_completed_tick - g_last_cmd_received_tick : 0lu),
+            (unsigned long)g_uptime_seconds);
     uart1_SendStr(line);
     uart1_SendStr("\r\n");
 }
@@ -410,6 +481,9 @@ static void app_poll_alarm_and_act(void)
         u8 is_pir = (alarm == ALARM_PIR || alarm == ALARM_BOTH);
         u8 is_gas = (alarm == ALARM_GAS || alarm == ALARM_BOTH);
 
+        g_last_alarm_trigger_tick = Bare_GetTickMs();
+        g_last_alarm_action_tick = Bare_GetTickMs();
+
         if(is_pir)
         {
             if(arm_mode == ARM_MODE_HOME)
@@ -419,13 +493,28 @@ static void app_poll_alarm_and_act(void)
             }
             else
             {
-                /* AWAY 模式：完整入侵联动+抓拍+云端告警 */
-                BEEP_StartPattern(BEEP_PATTERN_INTRUSION);
-                Linkage_OnIntrusion();
+                /* Multi-sensor fusion scoring - thesis sec 4.4 */
+                u8 epir = 100u;
+                u8 ecam = g_cap_evt_pending ? 50u : 0u;
+                u8 eacc = (alarm == ALARM_BOTH) ? 80u : 0u;
+
+                if (Fusion_IsHighConfidence(epir, ecam, eacc))
+                {
+                    /* AWAY: full intrusion chain */
+                    BEEP_StartPattern(BEEP_PATTERN_INTRUSION);
+                    Linkage_OnIntrusion();
 #if EN_OV7670_LOCAL
-                Capture_Request(CAP_EVT_INTRUSION);
+                    Capture_Request(CAP_EVT_INTRUSION);
 #endif
-                SysLog_Add(LOG_EVT_ALARM, "PIR_INTRUSION");
+                    SysLog_Add(LOG_EVT_ALARM, "PIR_INTRUSION");
+                    g_fusion_high_confidence++;
+                }
+                else
+                {
+                    /* Low confidence: doorbell beep only, no linkage/capture */
+                    BEEP_StartPattern(BEEP_PATTERN_DOORBELL);
+                    SysLog_Add(LOG_EVT_CONFIG, "PIR_LOW_CONF");
+                }
             }
         }
         if(is_gas)
@@ -524,9 +613,11 @@ int main(void)
             {
                 fp_next_ms = now + (u32)APP_FINGER_POLL_MS;
                 {
+                    g_finger_total_attempts++;
                     unsigned short match = AS608_Find_Fingerprint();
                     if (match > 0u && match != (unsigned short)0xFFFEu)
                     {
+                        g_finger_success++;
                         RELAY = 0;
                         RELAY_TIME = 15;
                         OLED_ShowString(0, 16, "FP UNLOCK OK    ", 16);
@@ -554,6 +645,15 @@ int main(void)
         WDG_Mark(WDG_SRC_UI);
         WDG_Mark(WDG_SRC_SYSMON);
         WDG_Pump();
+        /* 指标6: 统计 uptime (主循环 20ms, 50次=1秒) */
+        {
+            static u8 s_uptime_div = 0u;
+            if (++s_uptime_div >= 50u)
+            {
+                s_uptime_div = 0u;
+                g_uptime_seconds++;
+            }
+        }
         delay_ms(20);
     }
 #endif

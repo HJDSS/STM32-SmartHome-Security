@@ -80,4 +80,13 @@ typedef struct
 #define EVT_NET_ONLINE   (1u << 1)
 #define EVT_CAPTURE_REQ  (1u << 2)
 
+/* ---------- 论文第六章性能指标统计 extern ---------- */
+extern volatile u32 g_pwd_total_attempts, g_pwd_success;
+extern volatile u32 g_finger_total_attempts, g_finger_success;
+extern volatile u32 g_pir_total_triggers, g_intrusion_confirm;
+extern volatile u32 g_last_alarm_trigger_tick, g_last_alarm_action_tick;
+extern volatile u32 g_last_cmd_received_tick, g_last_cmd_completed_tick;
+extern volatile u16 g_cap_total_attempts, g_cap_success_count;
+extern volatile u32 g_uptime_seconds;
+
 #endif

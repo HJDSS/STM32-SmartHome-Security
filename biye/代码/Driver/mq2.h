@@ -22,10 +22,18 @@ void MQ2_Init(void);
 void MQ2_Alarm_Latch_Reset(void);
 u16 MQ2_Read_ADC_Once(void);
 u16 MQ2_Read_ADC_Filter(void);
+u16 MQ2_ApplyTempComp(u16 adc_raw, int16_t temp_c);  /* 温漂补偿: Acomp=Araw-3.2*(T-25), 论文公式4.3 */
 u8 MQ2_Check_Alarm(u16 adc_value);
 void MQ2_UpdateBaseline(u16 adc_filtered);  /* 自适应基线更新(每次传感器周期调用) */
 
-/* 本地 ADC浓度相关量（0.0~100.0 线性占满度，ppm 需标定；内部已做滤波采样） */
-float MQ2_Get_Value(void);
+/* 论文表3-2 多浓度点标定点数 */
+#define MQ2_CAL_POINTS                  5u
+
+/* 分段线性插值：将 ADC 值转换为浓度 (ppm)
+ * 论文第三章多浓度点标定，使用 5 点分段线性化
+ * 参数: adc — 经 MQ2_Read_ADC_Filter() 滤波后的 ADC 值
+ * 返回: 浓度 ppm (0~3000)
+ */
+u16 MQ2_Get_Value(u16 adc);
 
 #endif

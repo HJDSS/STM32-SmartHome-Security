@@ -90,6 +90,28 @@ u16 MQ2_Read_ADC_Filter(void)
     return (u16)(sum / APP_MQ2_MA_WIN);
 }
 
+/* 温漂补偿：Acomp = Araw - 3.2*(T-25)，论文公式4.3
+ * temp_c: DHT11 温度（摄氏度），整数值（如25表示25°C）
+ * adc_raw: MQ2_Read_ADC_Filter() 的输出
+ * 返回：补偿后的 ADC 值
+ */
+u16 MQ2_ApplyTempComp(u16 adc_raw, int16_t temp_c)
+{
+	/* delta_T = temp_c - 25，可能是负数 */
+	int16_t delta_T = temp_c - (int16_t)APP_MQ2_TEMP_BASE_C;
+
+	/* compensation = 3.2 * delta_T in Q8, then round to integer */
+	int32_t comp_q8 = (int32_t)APP_MQ2_TEMP_K_Q8 * (int32_t)delta_T;
+	int16_t comp = (int16_t)(comp_q8 >> 8);  /* Q8 → integer */
+
+	/* Acomp = Araw - comp (subtract because gas sensors read higher when hot) */
+	int32_t result = (int32_t)adc_raw - (int32_t)comp;
+
+	if (result < 0) result = 0;
+	if (result > 4095) result = 4095;
+	return (u16)result;
+}
+
 /* 整数平方根（逐位逼近法，O(log n)，无乘除，适合Cortex-M3无FPU） */
 static u32 isqrt_u32(u32 x)
 {
@@ -171,9 +193,28 @@ u8 MQ2_Check_Alarm(u16 adc_value)
 	return s_mq2_alarm_latch;
 }
 
-float MQ2_Get_Value(void)
+/* 论文表3-2 五浓度点标定数据 (ADC mid-point, ppm) */
+static const u16 cal_adc[MQ2_CAL_POINTS] = {175, 448, 898, 1515, 2200};
+static const u16 cal_ppm[MQ2_CAL_POINTS] = {0,   300, 1000, 2000, 3000};
+
+/* 分段线性插值，将 ADC 值转换为浓度 (ppm)
+ * 论文第三章多浓度点标定
+ */
+u16 MQ2_Get_Value(u16 adc)
 {
-    u16 v = MQ2_Read_ADC_Filter();
-    return (float)v * (100.0f / 4095.0f);
+    u8 i;
+    if (adc <= cal_adc[0]) return 0u;
+    if (adc >= cal_adc[MQ2_CAL_POINTS - 1]) return cal_ppm[MQ2_CAL_POINTS - 1];
+
+    for (i = 0; i < MQ2_CAL_POINTS - 1; i++) {
+        if (adc >= cal_adc[i] && adc < cal_adc[i + 1]) {
+            /* 标定点 i 和 i+1 之间线性插值 */
+            u32 adc_range = cal_adc[i + 1] - cal_adc[i];
+            u32 ppm_range = cal_ppm[i + 1] - cal_ppm[i];
+            u32 offset_adc = adc - cal_adc[i];
+            return (u16)(cal_ppm[i] + (offset_adc * ppm_range) / adc_range);
+        }
+    }
+    return cal_ppm[MQ2_CAL_POINTS - 1];
 }
 

@@ -52,6 +52,8 @@ static FATFS s_fatfs;
 static u8 s_fat_mounted;
 volatile u16 g_cap_replay_count = 0u;
 volatile u16 g_cap_sd_write_fail_count = 0u;
+extern volatile u16 g_cap_total_attempts;
+extern volatile u16 g_cap_success_count;
 #define CAP_OFFLINE_Q_DEPTH  ((u8)APP_CAP_OFFLINE_Q_DEPTH)
 typedef struct
 {
@@ -232,6 +234,8 @@ static void capture_one_to_sd(void)
     u8 row[CAP_ROW_BYTES];
     UINT bw;
 
+    g_cap_total_attempts++;
+
     snprintf(name, sizeof(name), "0:CAP_%lu.BMP", (unsigned long)tick);
 
     if(!s_fat_mounted)
@@ -280,6 +284,7 @@ static void capture_one_to_sd(void)
 
     if(fr == FR_OK)
     {
+        g_cap_success_count++;
         SysLog_Add(LOG_EVT_CONFIG, "CAP_END_OK");
         LOG_SD("bmp save ok");
         Capture_OnSaved(name);
