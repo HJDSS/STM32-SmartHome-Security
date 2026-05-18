@@ -1,0 +1,94 @@
+name: STM32 CI
+
+on:
+  push:
+    branches: [main, "rescue/**", "feature/**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  static-analysis:
+    name: Cppcheck Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Cppcheck
+        run: sudo apt-get update && sudo apt-get install -y cppcheck
+
+      - name: Run Cppcheck
+        run: |
+          cppcheck \
+            --platform=arm32 \
+            --std=c11 \
+            --enable=warning,performance,portability \
+            --suppress=*:*/CMSIS/* \
+            --suppress=*:*/STM32F10x_StdPeriph_Driver/* \
+            --suppress=*:*/FreeRTOSV9/* \
+            --suppress=*:*/FatFs/* \
+            --suppress=missingIncludeSystem \
+            --suppress=unusedFunction \
+            --inline-suppr \
+            --error-exitcode=0 \
+            --xml \
+            biye/代码/ 2> cppcheck-report.xml || true
+
+      - name: Generate Cppcheck HTML report
+        if: always()
+        run: |
+          sudo apt-get install -y cppcheck-htmlreport || true
+          if [ -f cppcheck-report.xml ]; then
+            cppcheck-htmlreport --file=cppcheck-report.xml --report-dir=cppcheck-html --source-dir=.
+          fi
+
+      - name: Upload Cppcheck Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cppcheck-report
+          path: |
+            cppcheck-report.xml
+            cppcheck-html/
+
+  build-check:
+    name: ARM GCC Compile Check (allow-failure)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ARM GCC
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-arm-none-eabi
+
+      - name: Check ARM GCC version
+        run: arm-none-eabi-gcc --version
+
+      - name: Syntax check (compile-only, no link)
+        run: |
+          echo "=== Syntax checking C files (compile only, no link) ==="
+          ARM_GCC="arm-none-eabi-gcc"
+          CFLAGS="-mcpu=cortex-m3 -mthumb -Wall -Werror -fsyntax-only"
+          DEFINES="-DSTM32F10X_HD -DUSE_STDPERIPH_DRIVER"
+          INCLUDES="-I biye/代码/User -I biye/代码/Driver -I biye/代码/System/delay -I biye/代码/System/sys -I biye/代码/System/usart"
+          INCLUDES="$INCLUDES -I biye/代码/Libraries/CMSIS -I biye/代码/Libraries/STM32F10x_StdPeriph_Driver/inc"
+          INCLUDES="$INCLUDES -I biye/代码/Middlewares/FreeRTOSV9/include -I biye/代码/Middlewares/FreeRTOSV9/portable/GCC/ARM_CM3"
+          INCLUDES="$INCLUDES -I biye/代码/Middlewares/FatFs"
+
+          FAILED=0
+          for f in $(find biye/代码/User biye/代码/Driver -name "*.c"); do
+            echo "  Checking: $f"
+            $ARM_GCC $CFLAGS $DEFINES $INCLUDES -c "$f" -o /dev/null 2>&1 || FAILED=1
+          done
+
+          if [ $FAILED -eq 1 ]; then
+            echo "::warning::Some files failed syntax check (may need Keil-specific headers)"
+          fi
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Build Check Result" >> $GITHUB_STEP_SUMMARY
+          echo "Build check is **allow-failure** — syntax errors may be due to missing Keil-specific headers." >> $GITHUB_STEP_SUMMARY
+          echo "This project is designed for Keil MDK. Full compilation requires Keil IDE." >> $GITHUB_STEP_SUMMARY
