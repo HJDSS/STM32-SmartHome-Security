@@ -635,6 +635,7 @@ int main(void)
                     if (match > 0u && match != (unsigned short)0xFFFEu)
                     {
                         g_finger_success++;
+                        AS608_ClearLockout();
                         RELAY = 0;
                         RELAY_TIME = APP_LOCK_OPEN_HOLD_TICKS;
                         OLED_ShowString(0, 16, "FP UNLOCK OK    ", 16);
@@ -643,6 +644,10 @@ int main(void)
                         arm_mode = ARM_MODE_DISARM;
                         security_mode = 0u;
                         LockManager_ClearBruteAlarm();
+                    }
+                    else
+                    {
+                        AS608_RecordFailedAttempt();
                     }
                 }
             }

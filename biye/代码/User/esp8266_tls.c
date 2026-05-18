@@ -767,12 +767,11 @@ void OneNET_Publish_Data(u8 temp, u8 humi, u16 gas, u8 door, u8 arm, u8 alarm, u
     sprintf(jb,
             "{\"id\":\"%u\",\"version\":\"1.0\",\"params\":{"
             "\"temp\":{\"value\":%.1f},\"hum\":{\"value\":%.1f},\"gas\":{\"value\":%.1f},"
-            "\"door\":{\"value\":%s},\"arm\":{\"value\":%s},\"ctrl_arm\":{\"value\":%s},\"alarm\":{\"value\":%s},\"led\":{\"value\":%s}"
+            "\"door\":{\"value\":%s},\"arm\":{\"value\":%s},\"alarm\":{\"value\":%s},\"led\":{\"value\":%s}"
             "}}",
             id_n++,
             (float)temp, (float)humi, (float)gas,
             door ? "true" : "false",
-            arm ? "true" : "false",
             arm ? "true" : "false",
             alarm ? "true" : "false",
             led ? "true" : "false");

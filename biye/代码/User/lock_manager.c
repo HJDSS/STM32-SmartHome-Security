@@ -75,7 +75,8 @@ void LockManager_ClearBruteAlarm(void)
 
 u8 LockManager_IsPwdLocked(void)
 {
-    return s_lock.pwd_locked;
+    extern u8 AS608_IsLockedOut(void);
+    return s_lock.pwd_locked || AS608_IsLockedOut();
 }
 
 const lock_state_t* LockManager_GetState(void)

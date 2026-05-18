@@ -35,6 +35,41 @@ unsigned char FP_Delet_All_Model[6]= {0x01,0x0,0x03,0x0d,0x00,0x11};
 unsigned char FP_Save_Finger[9]= {0x01,0x00,0x06,0x06,0x01,0x00,0x0B,0x00,0x19};
 unsigned char FP_Delete_Model[10]= {0x01,0x00,0x07,0x0C,0x0,0x0,0x0,0x1,0x0,0x0};
 
+/* 🟢1: 驱动层反暴力破解：指纹独立锁定计数器 */
+#define AS608_DRV_MAX_FAIL      3u
+#define AS608_DRV_LOCKOUT_MS    30000u
+
+static u8   s_as608_fail_count = 0u;
+static u32  s_as608_lock_until_ms = 0u;
+
+u8 AS608_IsLockedOut(void)
+{
+    if (s_as608_lock_until_ms == 0u) return 0u;
+    extern u32 Bare_GetTickMs(void);
+    u32 now = Bare_GetTickMs();
+    if (now < s_as608_lock_until_ms) return 1u;
+    /* 超时自动解除 */
+    s_as608_lock_until_ms = 0u;
+    s_as608_fail_count = 0u;
+    return 0u;
+}
+
+void AS608_RecordFailedAttempt(void)
+{
+    extern u32 Bare_GetTickMs(void);
+    s_as608_fail_count++;
+    if (s_as608_fail_count >= AS608_DRV_MAX_FAIL) {
+        s_as608_lock_until_ms = Bare_GetTickMs() + (u32)AS608_DRV_LOCKOUT_MS;
+        s_as608_fail_count = 0u;
+    }
+}
+
+void AS608_ClearLockout(void)
+{
+    s_as608_lock_until_ms = 0u;
+    s_as608_fail_count = 0u;
+}
+
 
 void PS_StaGPIO_Init(void)
 {

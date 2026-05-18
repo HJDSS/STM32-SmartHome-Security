@@ -31,4 +31,9 @@ unsigned short AS608_Find_Fingerprint(void);
 unsigned short AS608_Add_Fingerprint(unsigned short ID);
 void FINGERPRINT_Cmd_Delete_Model(unsigned short uiID_temp);
 
+/* 🟢1: 驱动层反暴力破解锁存器 */
+u8   AS608_IsLockedOut(void);
+void AS608_RecordFailedAttempt(void);
+void AS608_ClearLockout(void);
+
 #endif
