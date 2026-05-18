@@ -602,7 +602,22 @@
 #define APP_LOCK_OPEN_HOLD_MS           3000u
 #endif
 #ifndef APP_ADMIN_SESSION_MS
-#define APP_ADMIN_SESSION_MS            120000u
+#define APP_ADMIN_SESSION_MS            20000u  /* 管理员窗口默认 20s */
+#endif
+#ifndef APP_ADMIN_SESSION_MAX_MS
+#define APP_ADMIN_SESSION_MAX_MS        60000u  /* 录入/改密期间延长至 60s */
+#endif
+#ifndef APP_LOCK_BRUTE_MAX
+#define APP_LOCK_BRUTE_MAX              5u      /* 暴力破解阈值 */
+#endif
+#ifndef APP_BRUTE_BEEP_MS
+#define APP_BRUTE_BEEP_MS               3000u
+#endif
+#ifndef APP_PIR_CLEAR_LOW_MS
+#define APP_PIR_CLEAR_LOW_MS            350u
+#endif
+#ifndef APP_PIR_MIN_ACTIVE_MS
+#define APP_PIR_MIN_ACTIVE_MS           200u
 #endif
 #ifndef APP_FINGER_MATCH_SCORE_MIN
 #define APP_FINGER_MATCH_SCORE_MIN      50u

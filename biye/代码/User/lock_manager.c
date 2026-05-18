@@ -3,6 +3,7 @@
 #include "oled_view.h"
 #include "linkage.h"
 #include "board_config.h"
+#include "app_params.h"
 #include "gpio.h"
 #include "oled.h"
 #include "delay.h"
