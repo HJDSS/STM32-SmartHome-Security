@@ -555,12 +555,14 @@ u8 ESP8266_OneNET_Full_Init(void)
 
 static u16 s_onenet_mst;
 static u32 s_onenet_t0;
+static u32 s_backoff_ms = APP_NET_BACKOFF_INIT_MS;
 static u8 s_tls_hs_n;
 
 void ESP8266_OneNET_InitFsm_Reset(void)
 {
     s_onenet_mst = 0;
     s_tls_hs_n = 0;
+    s_backoff_ms = APP_NET_BACKOFF_INIT_MS;
     tls_inited = 0;
     g_at_nb.active = 0;
     g_wait_nb.active = 0;
@@ -595,7 +597,7 @@ void ESP8266_OneNET_InitFsm_Poll(void)
         s_onenet_mst = 2;
         return;
     case 2:
-        if((u32)(now - s_onenet_t0) < (u32)ESP_AT_BOOT_DELAY_MS)
+        if((u32)(now - s_onenet_t0) < s_backoff_ms)
             return;
         g_net_reconnect_count++;
         Net_LogSimple("[NET] reconnect begin");
@@ -624,6 +626,8 @@ void ESP8266_OneNET_InitFsm_Poll(void)
             g_wifi_fail_reason = 1u;
             Net_MarkOffline("AT handshake failed");
             UART1_SendStr("[OneNET] 模块AT握手失败(FSM)\r\n");
+            s_backoff_ms = s_backoff_ms * 2;
+            if (s_backoff_ms > APP_NET_BACKOFF_MAX_MS) s_backoff_ms = APP_NET_BACKOFF_MAX_MS;
             ESP8266_RESET();
             s_onenet_mst = 0;
             s_onenet_t0 = now;
@@ -648,6 +652,8 @@ void ESP8266_OneNET_InitFsm_Poll(void)
             return;
         if(pr != 1)
         {
+            s_backoff_ms = s_backoff_ms * 2;
+            if (s_backoff_ms > APP_NET_BACKOFF_MAX_MS) s_backoff_ms = APP_NET_BACKOFF_MAX_MS;
             ESP8266_RESET();
             s_onenet_mst = 0;
             s_onenet_t0 = now;
@@ -665,6 +671,8 @@ void ESP8266_OneNET_InitFsm_Poll(void)
             return;
         if(pr != 1)
         {
+            s_backoff_ms = s_backoff_ms * 2;
+            if (s_backoff_ms > APP_NET_BACKOFF_MAX_MS) s_backoff_ms = APP_NET_BACKOFF_MAX_MS;
             ESP8266_RESET();
             s_onenet_mst = 0;
             s_onenet_t0 = now;
@@ -680,6 +688,8 @@ void ESP8266_OneNET_InitFsm_Poll(void)
             g_wifi_fail_reason = 2u;
             Net_MarkOffline("WiFi join failed");
             UART1_SendStr("[OneNET] WiFi连接失败(FSM)\r\n");
+            s_backoff_ms = s_backoff_ms * 2;
+            if (s_backoff_ms > APP_NET_BACKOFF_MAX_MS) s_backoff_ms = APP_NET_BACKOFF_MAX_MS;
             ESP8266_RESET();
             s_onenet_mst = 0;
             s_onenet_t0 = now;
@@ -699,6 +709,8 @@ void ESP8266_OneNET_InitFsm_Poll(void)
             g_wifi_fail_reason = 3u;
             Net_MarkOffline("MQTT connect failed");
             UART1_SendStr("[OneNET] MQTT连接失败(FSM)\r\n");
+            s_backoff_ms = s_backoff_ms * 2;
+            if (s_backoff_ms > APP_NET_BACKOFF_MAX_MS) s_backoff_ms = APP_NET_BACKOFF_MAX_MS;
             ESP8266_RESET();
             ESP8266_OneNET_MqttFsm_Reset();
             s_onenet_mst = 0;
@@ -706,6 +718,7 @@ void ESP8266_OneNET_InitFsm_Poll(void)
             return;
         }
         tls_inited = 1;
+        s_backoff_ms = APP_NET_BACKOFF_INIT_MS;
         g_wifi_fail_reason = 0u;
         g_net_stage = 4;
         Net_LogSimple("[NET] reconnect success");

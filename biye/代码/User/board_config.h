@@ -465,6 +465,39 @@
 #define BOARD_BEEP_PIN                  GPIO_Pin_10
 #define BOARD_BEEP_CLK                  RCC_APB2Periph_GPIOC
 
+/* ---------- 蜂鸣器分级告警音参数 (10ms 为基准节拍) ---------- */
+/* 门禁：三声短促 (100ms 响 + 100ms 停) x3 */
+#ifndef BOARD_BEEP_DOORBELL_ON_MS
+#define BOARD_BEEP_DOORBELL_ON_MS       100u
+#endif
+#ifndef BOARD_BEEP_DOORBELL_OFF_MS
+#define BOARD_BEEP_DOORBELL_OFF_MS      100u
+#endif
+#ifndef BOARD_BEEP_DOORBELL_REPEAT
+#define BOARD_BEEP_DOORBELL_REPEAT      3u
+#endif
+/* 入侵：急促连续 (50ms 响 + 50ms 停，无限循环) */
+#ifndef BOARD_BEEP_INTRUSION_ON_MS
+#define BOARD_BEEP_INTRUSION_ON_MS      50u
+#endif
+#ifndef BOARD_BEEP_INTRUSION_OFF_MS
+#define BOARD_BEEP_INTRUSION_OFF_MS     50u
+#endif
+/* 燃气：长鸣间隔 (1000ms 响 + 200ms 停，无限循环) */
+#ifndef BOARD_BEEP_GAS_ON_MS
+#define BOARD_BEEP_GAS_ON_MS            1000u
+#endif
+#ifndef BOARD_BEEP_GAS_OFF_MS
+#define BOARD_BEEP_GAS_OFF_MS           200u
+#endif
+/* 暴力破解锁定：交替鸣叫 (200ms 响 + 200ms 停，无限循环) */
+#ifndef BOARD_BEEP_LOCKOUT_ON_MS
+#define BOARD_BEEP_LOCKOUT_ON_MS        200u
+#endif
+#ifndef BOARD_BEEP_LOCKOUT_OFF_MS
+#define BOARD_BEEP_LOCKOUT_OFF_MS       200u
+#endif
+
 /* =============================================================================
  * [M1 增补] 后续模块预留宏（M2 IWDG / M3 FreeRTOS 任务 / M4~M9 算法参数）
  * =============================================================================
@@ -656,6 +689,14 @@
 #endif
 #ifndef APP_SECURE_AES_ENABLE
 #define APP_SECURE_AES_ENABLE           1
+#endif
+
+/* ---------- 断网重连指数退避（论文 §x-x） ---------- */
+#ifndef APP_NET_BACKOFF_INIT_MS
+#define APP_NET_BACKOFF_INIT_MS         1200u   /* 初始退避 1.2s */
+#endif
+#ifndef APP_NET_BACKOFF_MAX_MS
+#define APP_NET_BACKOFF_MAX_MS          60000u  /* 上限 60s，论文要求 */
 #endif
 
 #endif /* __BOARD_CONFIG_H */
