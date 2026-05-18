@@ -1,10 +1,12 @@
 /**********************************************************************************
  * 文件名  ：usart2.c
- * 描述    ：ESP8266 走 **USART3（PB10/PB11）**，与 PA0~PA7 摄像头并口无冲突。
- *          函数名仍 UART2_* / USART2_Init_Config，兼容 esp8266_tls 与 Uart2_Buf。
- *          接收中断见 User/main.c 的 USART3_IRQHandler：同源写入 Uart2_Buf（OneNET/AT）与 Uart3_Buf（遥控解析）。
+ * 描述    ：⚠ ESP8266 实际使用 **USART3（PB10/PB11）**，与 PA0~PA7 摄像头并口无冲突。
+ *          历史原因函数名使用 UART2_* / USART2_Init_Config，但操作的是 USART3 硬件。
+ *          usart2.h 提供 USART3_* / UART3_* 别名宏，新代码请使用正确命名。
+ *          接收中断见 User/main.c 的 USART3_IRQHandler：写入 Uart2_Buf（OneNET/AT）与 Uart3_Buf（遥控解析）。
  * 库版本  ：ST_v3.5
  **********************************************************************************/
+
 
 #include "usart2.h"
 #include "delay.h"
