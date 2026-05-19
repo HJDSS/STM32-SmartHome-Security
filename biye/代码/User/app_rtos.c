@@ -64,7 +64,7 @@
 static sensor_state_t g_sensor;
 static esp_state_t g_esp;
 
-static SemaphoreHandle_t s_sensor_mtx;
+SemaphoreHandle_t s_sensor_mtx;
 
 /* IPC 句柄 */
 static QueueHandle_t       s_alarm_q;

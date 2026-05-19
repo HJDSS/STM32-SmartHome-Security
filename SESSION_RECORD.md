@@ -70,3 +70,32 @@ Keil MDK Rebuild All，编译错误 1 个 + 警告 8 个
 - 子Agent 2 审核：**全部通过**
 - 修复1-3 正确解决报错，无副作用
 - 审核补充修复4（esp8266_tls.c 的 volatile 一致性问题）
+
+---
+
+## 修复会话 2026-05-19 #2 (链接修复)
+
+### 报错来源
+Keil MDK Rebuild All，链接错误 1 个 + 警告 2 个
+
+### 错误详情
+
+| 类型 | 文件 | 行号 | 描述 |
+|------|------|------|------|
+| **ERROR** | `程序.axf` | — | `L6218E: Undefined symbol s_sensor_mtx (referred from syslog.o)` |
+| WARNING | `secure_store.c` | 87 | `rotate_key_window` 声明但未引用 |
+| WARNING | `esp8266_tls.c` | 62 | `cifsr_buf_has_sta_ip` 声明但未引用 |
+
+### 修复记录
+
+| 序号 | 文件 | 修改 |
+|------|------|------|
+| 5 | `User/app_rtos.c:67` | 去掉 `static` 关键字：`static SemaphoreHandle_t s_sensor_mtx` → `SemaphoreHandle_t s_sensor_mtx` |
+
+### 根因
+`app_rtos.c:67` 将 `s_sensor_mtx` 声明为 `static`，符号仅文件内可见；`syslog.c:14` 通过 `extern` 引用该符号，链接器找不到。
+
+### 审核结果
+- 子Agent 2 审核：**通过**
+- syslog.c 中对 s_sensor_mtx 的访问均有 NULL 保护
+- 裸机模式（USE_FREERTOS=0）下两侧均不参与编译，无影响
