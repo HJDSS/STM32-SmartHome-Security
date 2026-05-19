@@ -37,6 +37,18 @@ static void ov_gpio_init(void)
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
     GPIO_Init(OV_DATA_PORT, &GPIO_InitStructure);
 
+#if BOARD_OV7670_MCO_ENABLE
+    /* PA8 → MCO 输出 HSE 8MHz 给 OV7670 XCLK */
+    {
+        GPIO_InitTypeDef mco;
+        mco.GPIO_Pin  = GPIO_Pin_8;
+        mco.GPIO_Mode = GPIO_Mode_AF_PP;
+        mco.GPIO_Speed = GPIO_Speed_50MHz;
+        GPIO_Init(GPIOA, &mco);
+    }
+    RCC_MCOConfig(RCC_MCO_HSE);
+#endif
+
     OV_OE(1);
     OV_WREN(1);
     OV_RCK_H();
@@ -66,6 +78,7 @@ u8 OV7670_FIFO_Init(void)
     {
         SCCB_WR_Reg(ov7670_init_reg_tbl[i][0], ov7670_init_reg_tbl[i][1]);
     }
+    delay_ms(300);  /* AWB/AEC/AGC 需约10帧收敛 */
     return 0;
 }
 
@@ -134,7 +147,9 @@ u8 OV7670_FIFO_ReadByte(void)
 {
     u8 dat;
     OV_RCK_L();
+    __NOP(); __NOP();
     dat = OV_DATA_READ();
     OV_RCK_H();
+    __NOP();
     return dat;
 }

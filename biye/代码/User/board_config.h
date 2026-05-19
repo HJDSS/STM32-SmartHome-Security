@@ -116,6 +116,14 @@
 #define BOARD_CAP_LOCAL_FIXED_BMP_NAME  "0:CAP_LAST.BMP"
 #endif
 
+/* OV7670 XCLK 来源:
+ * 1=MCU 通过 PA8 MCO 提供 8MHz（模块无板载晶振时启用，需将 AS608 PS_Sta 移到 PA15）
+ * 0=模块自带晶振（无需 MCU 提供时钟，PA8 保持给 AS608 使用）
+ * 注意: 设为 1 前务必确认模块无板载晶振，否则两路时钟冲突可能损坏硬件 */
+#ifndef BOARD_OV7670_MCO_ENABLE
+#define BOARD_OV7670_MCO_ENABLE   0
+#endif
+
 /* SD 调试详细信息（E/R1/引脚电平/写阶段等）：1=显示，0=仅显示简洁 OK/ERR */
 #ifndef SD_DEBUG_VERBOSE
 #define SD_DEBUG_VERBOSE    1
@@ -159,8 +167,13 @@
 #define BOARD_USART1_RX_PIN             GPIO_Pin_10
 
 /* AS608 状态脚 PS_Sta */
+#if BOARD_OV7670_MCO_ENABLE
+#define BOARD_AS608_PS_STA_PORT         GPIOA                   /* PA15（原 PA8 给 MCO 用） */
+#define BOARD_AS608_PS_STA_PIN          GPIO_Pin_15
+#else
 #define BOARD_AS608_PS_STA_PORT         GPIOA                   /* PA8  */
 #define BOARD_AS608_PS_STA_PIN          GPIO_Pin_8
+#endif
 #define BOARD_AS608_PS_STA_CLK          RCC_APB2Periph_GPIOA
 
 /* AS608 识别速度：原 uart_recv 会傻等满超时(如400ms)才返回，改为"字节流静止"提前结束一帧 */

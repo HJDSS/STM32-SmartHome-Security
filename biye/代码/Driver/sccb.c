@@ -6,7 +6,17 @@
  * - 低电平：开漏输出拉低
  * - 高电平：切到输入上拉（使用 MCU 内部上拉）
  * 这样即使没有外接 4.7k~10k 上拉，也能跑通识别/初始化（速度更慢、更易兼容）。
+ *
+ * SCCB_BIT_DELAY_US: 位传输延时（默认10us，内部上拉40kΩ≈0.4μs上升沿足够）
+ * SCCB_BYTE_GAP_US: 字节间间隙（默认20us）
+ * 杜邦线过长可改为15-20us
  */
+#ifndef SCCB_BIT_DELAY_US
+#define SCCB_BIT_DELAY_US   10u
+#endif
+#ifndef SCCB_BYTE_GAP_US
+#define SCCB_BYTE_GAP_US    20u
+#endif
 
 static void SCCB_SDA_OUT_OD(void)
 {
@@ -45,27 +55,27 @@ static void SCCB_SCL_IN_PU(void)
 static void sccb_sda_hi(void)
 {
 		SCCB_SDA_IN_PU(); /* 释放为高 */
-		delay_us(10);
+		delay_us(SCCB_BIT_DELAY_US);
 }
 
 static void sccb_sda_lo(void)
 {
 		SCCB_SDA_OUT_OD();
 		SCCB_SDA(0);
-		delay_us(10);
+		delay_us(SCCB_BIT_DELAY_US);
 }
 
 static void sccb_scl_hi(void)
 {
 		SCCB_SCL_IN_PU(); /* 释放为高 */
-		delay_us(10);
+		delay_us(SCCB_BIT_DELAY_US);
 }
 
 static void sccb_scl_lo(void)
 {
 		SCCB_SCL_OUT_OD();
 		SCCB_SCL(0);
-		delay_us(10);
+		delay_us(SCCB_BIT_DELAY_US);
 }
 
 void SCCB_Init(void)
@@ -91,32 +101,32 @@ static void SCCB_Start(void)
 {
 		sccb_sda_hi();
 		sccb_scl_hi();
-		delay_us(80);
+		delay_us(SCCB_BIT_DELAY_US);
 		sccb_sda_lo();
-		delay_us(80);
+		delay_us(SCCB_BIT_DELAY_US);
 		sccb_scl_lo();
 }
 
 static void SCCB_Stop(void)
 {
 		sccb_sda_lo();
-		delay_us(80);
+		delay_us(SCCB_BIT_DELAY_US);
 		sccb_scl_hi();
-		delay_us(80);
+		delay_us(SCCB_BIT_DELAY_US);
 		sccb_sda_hi();
-		delay_us(80);
+		delay_us(SCCB_BIT_DELAY_US);
 }
 
 static void SCCB_NoAck(void)
 {
-		delay_us(80);
+		delay_us(SCCB_BIT_DELAY_US);
 		sccb_sda_hi();
 		sccb_scl_hi();
-		delay_us(80);
+		delay_us(SCCB_BIT_DELAY_US);
 		sccb_scl_lo();
-		delay_us(80);
+		delay_us(SCCB_BIT_DELAY_US);
 		sccb_sda_lo();
-		delay_us(80);
+		delay_us(SCCB_BIT_DELAY_US);
 }
 
 static u8 SCCB_WR_Byte(u8 dat)
@@ -127,15 +137,15 @@ static u8 SCCB_WR_Byte(u8 dat)
 				if(dat&0x80) sccb_sda_hi();
 				else sccb_sda_lo();
 				dat<<=1;
-				delay_us(60);
+				delay_us(SCCB_BIT_DELAY_US);
 				sccb_scl_hi();
-				delay_us(60);
+				delay_us(SCCB_BIT_DELAY_US);
 				sccb_scl_lo();
 		}
 		SCCB_SDA_IN_PU();
-		delay_us(60);
+		delay_us(SCCB_BIT_DELAY_US);
 		sccb_scl_hi();
-		delay_us(60);
+		delay_us(SCCB_BIT_DELAY_US);
 		res = (SCCB_READ_SDA)?1:0;
 		sccb_scl_lo();
 		SCCB_SDA_OUT_OD();
@@ -148,11 +158,11 @@ static u8 SCCB_RD_Byte(void)
 		SCCB_SDA_IN_PU();
 		for(j=8;j>0;j--)
 		{
-				delay_us(60);
+				delay_us(SCCB_BIT_DELAY_US);
 				sccb_scl_hi();
 				temp<<=1;
 				if(SCCB_READ_SDA) temp++;
-				delay_us(60);
+				delay_us(SCCB_BIT_DELAY_US);
 				sccb_scl_lo();
 		}
 		SCCB_SDA_OUT_OD();
@@ -164,9 +174,9 @@ u8 SCCB_WR_Reg(u8 reg,u8 data)
 		u8 res=0;
 		SCCB_Start();
 		if(SCCB_WR_Byte(SCCB_ID)) res=1;
-		delay_us(100);
+		delay_us(SCCB_BYTE_GAP_US);
 		if(SCCB_WR_Byte(reg)) res=1;
-		delay_us(100);
+		delay_us(SCCB_BYTE_GAP_US);
 		if(SCCB_WR_Byte(data)) res=1;
 		SCCB_Stop();
 		return res;
@@ -177,14 +187,14 @@ u8 SCCB_RD_Reg(u8 reg)
 		u8 val;
 		SCCB_Start();
 		SCCB_WR_Byte(SCCB_ID);
-		delay_us(100);
+		delay_us(SCCB_BYTE_GAP_US);
 		SCCB_WR_Byte(reg);
-		delay_us(100);
+		delay_us(SCCB_BYTE_GAP_US);
 		SCCB_Stop();
-		delay_us(100);
+		delay_us(SCCB_BYTE_GAP_US);
 		SCCB_Start();
 		SCCB_WR_Byte(SCCB_ID|0X01);
-		delay_us(100);
+		delay_us(SCCB_BYTE_GAP_US);
 		val = SCCB_RD_Byte();
 		SCCB_NoAck();
 		SCCB_Stop();

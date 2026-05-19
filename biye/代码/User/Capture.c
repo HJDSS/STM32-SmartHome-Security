@@ -138,50 +138,6 @@ static void capture_flush_offline_queue(void)
     }
 }
 
-static void write_bmp_header_rgb565_bottom_up(FIL *fp)
-{
-    UINT bw;
-    u8 hdr[54] = {0};
-    u32 file_size = (u32)BMP_FILE_SIZE;
-    u32 offbits = (u32)BMP_PIXEL_OFFSET;
-    u32 dib = 40;
-    s32 w = (s32)CAP_W;
-    s32 h = (s32)CAP_H;
-    u16 planes = 1, bpp = 16;
-    u32 comp = 3;
-    u32 imgsize = (u32)CAP_PIXEL_BYTES;
-    u32 rmask = 0xF800, gmask = 0x07E0, bmask = 0x001F;
-
-    hdr[0] = 'B';
-    hdr[1] = 'M';
-    hdr[2] = (u8)file_size;
-    hdr[3] = (u8)(file_size >> 8);
-    hdr[4] = (u8)(file_size >> 16);
-    hdr[5] = (u8)(file_size >> 24);
-    hdr[10] = (u8)offbits;
-    hdr[14] = (u8)dib;
-    hdr[18] = (u8)w;
-    hdr[19] = (u8)(w >> 8);
-    hdr[20] = (u8)(w >> 16);
-    hdr[21] = (u8)(w >> 24);
-    hdr[22] = (u8)h;
-    hdr[23] = (u8)(h >> 8);
-    hdr[24] = (u8)(h >> 16);
-    hdr[25] = (u8)(h >> 24);
-    hdr[26] = (u8)planes;
-    hdr[28] = (u8)bpp;
-    hdr[30] = (u8)comp;
-    hdr[34] = (u8)imgsize;
-    hdr[35] = (u8)(imgsize >> 8);
-    hdr[36] = (u8)(imgsize >> 16);
-    hdr[37] = (u8)(imgsize >> 24);
-
-    (void)f_write(fp, hdr, 54, &bw);
-    (void)f_write(fp, &rmask, 4, &bw);
-    (void)f_write(fp, &gmask, 4, &bw);
-    (void)f_write(fp, &bmask, 4, &bw);
-}
-
 static void write_bmp_header_rgb565_topdown(FIL *fp)
 {
     UINT bw;
@@ -233,8 +189,9 @@ static void capture_one_to_sd(void)
     char name[32];
     u32 tick = Bare_GetTickMs();
     u16 y;
-    u8 row[CAP_ROW_BYTES];
     UINT bw;
+    FILINFO fno;
+    u8 ok;
 
     g_cap_total_attempts++;
 
@@ -260,7 +217,7 @@ static void capture_one_to_sd(void)
     if(fr != FR_OK)
         return;
 
-    write_bmp_header_rgb565_bottom_up(&fp);
+    write_bmp_header_rgb565_topdown(&fp);
 
     SysLog_Add(LOG_EVT_CONFIG, "CAP_BEGIN");
     LOG_SD("capture begin");
@@ -273,36 +230,38 @@ static void capture_one_to_sd(void)
     }
     OV7670_ResetReadPtr();
 
+    SPI_SetSpeed(SD_SPI, 1);  /* 切到 18MHz 写像素数据 */
+
+    ok = 1u;
     for(y = 0; y < CAP_H; y++)
     {
-        u16 i;
-        FSIZE_t off;
-
-        for(i = 0; i < CAP_ROW_BYTES; i++)
-            row[i] = OV7670_ReadByte();
-
-        off = (FSIZE_t)BMP_PIXEL_OFFSET + (FSIZE_t)(CAP_H - 1u - y) * (FSIZE_t)CAP_ROW_BYTES;
-        (void)f_lseek(&fp, off);
-        fr = f_write(&fp, row, CAP_ROW_BYTES, &bw);
+        cap_read_fifo_row_rgb565(s_cap_row_wr);
+        fr = f_write(&fp, s_cap_row_wr, CAP_ROW_BYTES, &bw);
         if(fr != FR_OK || bw != CAP_ROW_BYTES)
+        {
+            ok = 0u;
             break;
+        }
+        if((y & 0x07u) == 0u)
+            cap_iwdg_kick();
     }
 
+    SPI_SetSpeed(SD_SPI, 0);  /* 切回 1.125MHz 安全速率 */
     (void)f_close(&fp);
 
-    if(fr == FR_OK)
+    if(ok && f_stat(name, &fno) == FR_OK && (FSIZE_t)fno.fsize == (FSIZE_t)BMP_FILE_SIZE)
     {
         g_cap_success_count++;
-        g_cap_last_ok = 1u;  /* 🟡12: 抓拍成功→融合评分可参考 */
+        g_cap_last_ok = 1u;
         SysLog_Add(LOG_EVT_CONFIG, "CAP_END_OK");
         LOG_SD("bmp save ok");
         Capture_OnSaved(name);
     }
     else
     {
-        g_cap_sd_write_fail_count++;
+        if(!ok) { g_cap_sd_write_fail_count++; }
+        else { g_cap_validation_fail_count++; (void)f_unlink(name); }
         g_cap_last_ok = 0u;
-        SysLog_Add(LOG_EVT_ALARM, "CAP_SD_WRITE_FAIL");
         SysLog_Add(LOG_EVT_ALARM, "CAP_END_FAIL");
         LOG_SD("bmp save fail");
     }
@@ -379,6 +338,8 @@ u8 Capture_LocalSnapshot(void)
     }
     OV7670_FIFO_ResetReadPtr();
 
+    SPI_SetSpeed(SD_SPI, 1);  /* 切到 18MHz 写像素数据 */
+
     ok = 1u;
     for(y = 0; y < CAP_H; y++)
     {
@@ -392,6 +353,8 @@ u8 Capture_LocalSnapshot(void)
         if((y & 0x07u) == 0u)
             cap_iwdg_kick();
     }
+
+    SPI_SetSpeed(SD_SPI, 0);  /* 切回 1.125MHz 安全速率 */
 
     if(!ok)
     {
