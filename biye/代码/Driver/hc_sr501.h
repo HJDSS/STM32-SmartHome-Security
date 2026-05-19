@@ -25,7 +25,7 @@
 #ifndef APP_PIR_DEBOUNCE_DEFAULT
 #define APP_PIR_DEBOUNCE_DEFAULT           80u
 #endif
-extern u8 g_pir_debounce_ms;
+extern volatile u8 g_pir_debounce_ms;
 
 extern volatile u8 g_hc_sr501_irq_flag;
 

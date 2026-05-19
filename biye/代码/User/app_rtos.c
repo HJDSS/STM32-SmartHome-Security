@@ -28,6 +28,8 @@
 #include "as608.h"
 #include "usart1.h"
 
+#define UART1_SendStr uart1_SendStr
+
 #ifndef STK_LOCK
 #define STK_LOCK        512u
 #endif

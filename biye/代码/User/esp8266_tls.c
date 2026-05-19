@@ -17,7 +17,7 @@
 #include "app_rtos.h"
 #endif
 
-extern u8 g_pir_debounce_ms;  /* 🟡13: hc_sr501.c 运行时消抖变量 */
+extern volatile u8 g_pir_debounce_ms;  /* 🟡13: hc_sr501.c 运行时消抖变量 */
 
 extern volatile u8 RELAY_TIME;
 extern volatile u32 g_last_cmd_received_tick;
