@@ -264,7 +264,13 @@ static void capture_one_to_sd(void)
 
     SysLog_Add(LOG_EVT_CONFIG, "CAP_BEGIN");
     LOG_SD("capture begin");
-    OV7670_StartCapture();
+    if(!OV7670_FIFO_StartCaptureTimeout(800u))
+    {
+        SysLog_Add(LOG_EVT_ALARM, "CAP_VSYNC_TO");
+        (void)f_close(&fp);
+        (void)f_unlink(name);
+        return;
+    }
     OV7670_ResetReadPtr();
 
     for(y = 0; y < CAP_H; y++)

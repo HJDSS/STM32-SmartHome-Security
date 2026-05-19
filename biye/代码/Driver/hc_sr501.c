@@ -64,25 +64,23 @@ u8 HC_SR501_Read_Level(void)
 
 u8 HC_SR501_Poll_Triggered(void)
 {
-    static u8 debounce_cnt = 0;
+    static uint32_t s_pir_high_start_ms = 0u;
     u8 level = HC_SR501_Read_Level();
-    u8 debounce_tick = (g_pir_debounce_ms + 9u) / 10u;  /* 🟡13: 运行时变量替代编译期宏 */
 
     if(level == HC_SR501_TRIGGER_LEVEL)
     {
-        if(debounce_cnt < debounce_tick)
+        if(s_pir_high_start_ms == 0u)
         {
-            debounce_cnt++;
+            s_pir_high_start_ms = Bare_GetTickMs();
         }
-        if(debounce_cnt >= debounce_tick)
+        if((u32)(Bare_GetTickMs() - s_pir_high_start_ms) >= (u32)g_pir_debounce_ms)
         {
-            debounce_cnt = debounce_tick;
             return 1;
         }
     }
     else
     {
-        debounce_cnt = 0;
+        s_pir_high_start_ms = 0u;
     }
     return 0;
 }

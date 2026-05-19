@@ -25,6 +25,10 @@
 #include "log.h"
 #include "app_rtos.h"
 #include "wdg.h"
+#if USE_FREERTOS
+#include "FreeRTOS.h"
+#include "task.h"
+#endif
 
 #define BUF2_MAX 800
 #define BUF3_MAX 400
@@ -141,6 +145,9 @@ void Security_Set_ArmMode(arm_mode_t mode)
 void ESP8266_CooperativeYield(void)
 {
     KeyboardSM_Tick();
+#if USE_FREERTOS
+    taskYIELD();
+#endif
 }
 
 void USART3_IRQHandler(void)

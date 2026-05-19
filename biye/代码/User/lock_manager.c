@@ -92,6 +92,18 @@ void LockManager_OnConfirm(const keypad_input_t *in)
     if(in == NULL || in->count != 6)
         return;
 
+    /* 管理员改密模式：将输入作为新密码写入Flash */
+    if (s_lock.pwd_chg_state != 0u)
+    {
+        if (s_lock.user_level == USER_ADMIN)
+            FlashStore_WriteAdminPassword(in->digits);
+        else
+            FlashStore_WriteUserPassword(in->digits);
+        s_lock.pwd_chg_state = 0u;
+        OLED_ShowString(0, 16, "PWD CHANGED     ", 16);
+        return;
+    }
+
     g_pwd_total_attempts++;
 
     FlashStore_ReadPasswords(user_pwd, admin_pwd);

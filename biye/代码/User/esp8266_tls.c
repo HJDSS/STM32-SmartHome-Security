@@ -752,8 +752,8 @@ void ESP8266_OneNET_InitFsm_Poll(void)
 
 void OneNET_Publish_Data(u8 temp, u8 humi, u16 gas, u8 door, u8 arm, u8 alarm, u8 led)
 {
-    char topic[120];
-    char jb[384];
+    static char topic[120];
+    static char jb[384];
     static unsigned id_n = 1;
 
 #if !ONENET_MQTT_ENABLE
@@ -844,6 +844,9 @@ void OneNET_Parse_Cmd(void)
 
     if(Uart2_Buf[0] == 0) return;
 
+    /* 关USART3中断 → 保护Uart2_Buf在解析期间不被ISR修改 */
+    USART_ITConfig(USART3, USART_IT_RXNE, DISABLE);
+
     p = strstr(Uart2_Buf, "+MQTTSUBRECV:");
     if(p != NULL)
         scan = p;
@@ -868,6 +871,7 @@ void OneNET_Parse_Cmd(void)
                     if (s_dedup_id[idx] == cmd_id && s_dedup_ts[idx] == cmd_ts)
                     {
                         Net_LogSimple("[NET] dedup duplicate cmd");
+                        USART_ITConfig(USART3, USART_IT_RXNE, ENABLE);
                         return;
                     }
                 }
@@ -1053,5 +1057,6 @@ void OneNET_Parse_Cmd(void)
         OneNET_Reply_PropertySet(0);
         OneNET_PropertySetClear();
     }
+    USART_ITConfig(USART3, USART_IT_RXNE, ENABLE);
 #endif
 }

@@ -1,4 +1,5 @@
 #include "syslog.h"
+#include "board_config.h"
 #include "stmflash.h"
 #include "string.h"
 #include "stdio.h"
@@ -6,6 +7,12 @@
 #include "oled_ui.h"
 #include "usart1.h"
 #include "delay.h"
+
+#if USE_FREERTOS
+#include "FreeRTOS.h"
+#include "semphr.h"
+extern SemaphoreHandle_t s_sensor_mtx;
+#endif
 
 #define LOG_MAGIC_HI      0xA5A5
 #define LOG_MAGIC_LO      0x5A5A
@@ -223,6 +230,13 @@ void SysLog_ReportLast(u8 n,LOG_FILTER_T filter)
 
 void SysLog_OLED_ShowPage(u16 page,LOG_FILTER_T filter)
 {
+#if USE_FREERTOS
+			if (s_sensor_mtx != NULL)
+			{
+					if (xSemaphoreTake(s_sensor_mtx, pdMS_TO_TICKS(500)) != pdTRUE)
+							return;
+			}
+#endif
 		/* OLED 3行显示(16/32/48)，每页3条 */
 		u16 start = page * 3;
 		u16 i,idx;
@@ -249,6 +263,10 @@ void SysLog_OLED_ShowPage(u16 page,LOG_FILTER_T filter)
 				shown++;
 		}
 		OLED_BatchEnd();
+#if USE_FREERTOS
+		if (s_sensor_mtx != NULL)
+				xSemaphoreGive(s_sensor_mtx);
+#endif
 }
 
 void SysLog_Cmd_Proc(char *cmd)

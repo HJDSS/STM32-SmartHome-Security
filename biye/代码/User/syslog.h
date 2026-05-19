@@ -6,7 +6,7 @@
 #define SYSLOG_FLASH_BASE        0x0801E000
 #define SYSLOG_FLASH_PAGES       4
 #define SYSLOG_PAGE_SIZE         2048
-#define SYSLOG_SLOT_SIZE         32
+#define SYSLOG_SLOT_SIZE         40
 #define SYSLOG_MAX_SLOTS         ((SYSLOG_FLASH_PAGES*SYSLOG_PAGE_SIZE)/SYSLOG_SLOT_SIZE)
 
 typedef enum

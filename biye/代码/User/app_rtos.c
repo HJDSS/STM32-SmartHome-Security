@@ -137,14 +137,23 @@ static void Task_Sensor(void *arg)
     uint32_t last_dht = 0;
     uint32_t last_mq2 = 0;
     static u8 s_mq2_was_alarm = 0u;
+    static u16 s_mq2_last_adc = 0u;
+    static u8 s_mq2_stuck_cnt = 0u;
+    static u8 s_mq2_recover_cnt = 0u;
+    static u8 s_mq2_fault = 0u;
     static uint32_t s_pir_low_since = 0u;
     static uint32_t s_brute_beep_until = 0u;
+    /* DHT11 指数退避状态 */
+    static u8 s_dht_fail_streak = 0u;
+    static u8 s_dht_ok_streak = 0u;
+    static uint32_t s_dht_backoff_ms = APP_DHT_POLL_MS;
+    static u8 s_dht_was_ok = 1u;
 
     for (;;)
     {
         uint32_t now = (uint32_t)xTaskGetTickCount();
 
-        if ((uint32_t)(now - last_dht) >= pdMS_TO_TICKS(APP_DHT_POLL_MS))
+        if ((uint32_t)(now - last_dht) >= pdMS_TO_TICKS(s_dht_backoff_ms))
         {
             u8 t = 0, h = 0;
             last_dht = now;
@@ -152,18 +161,46 @@ static void Task_Sensor(void *arg)
             {
                 dht11_temp = t;
                 dht11_humi = h;
+                s_dht_fail_streak = 0u;
+                if (s_dht_ok_streak < 0xFFu) s_dht_ok_streak++;
                 xSemaphoreTake(s_sensor_mtx, portMAX_DELAY);
                 g_sensor.temp = t;
                 g_sensor.humi = h;
                 g_sensor.dht_ok = 1u;
                 xSemaphoreGive(s_sensor_mtx);
+                /* 连续成功 >= RECOVER_SUCCESSES 后恢复正常间隔 */
+                if (s_dht_ok_streak >= APP_DHT_RECOVER_SUCCESSES)
+                {
+                    s_dht_backoff_ms = APP_DHT_POLL_MS;
+                }
             }
             else
             {
+                s_dht_ok_streak = 0u;
+                if (s_dht_fail_streak < 0xFFu) s_dht_fail_streak++;
                 xSemaphoreTake(s_sensor_mtx, portMAX_DELAY);
                 g_sensor.dht_ok = 0u;
                 xSemaphoreGive(s_sensor_mtx);
+                if (s_dht_fail_streak >= APP_DHT_OFFLINE_FAILS)
+                {
+                    if (s_dht_was_ok)
+                    {
+                        SysLog_Add(LOG_EVT_ALARM, "DHT_OFFLINE");
+                    }
+                    /* 指数退避：2000->4000->8000->16000 */
+                    if (s_dht_backoff_ms < APP_DHT_RETRY_BACKOFF_MAX_MS)
+                    {
+                        s_dht_backoff_ms <<= 1;
+                        if (s_dht_backoff_ms > APP_DHT_RETRY_BACKOFF_MAX_MS)
+                            s_dht_backoff_ms = APP_DHT_RETRY_BACKOFF_MAX_MS;
+                    }
+                }
             }
+            if (g_sensor.dht_ok && !s_dht_was_ok)
+            {
+                SysLog_Add(LOG_EVT_CONFIG, "DHT_RECOVER");
+            }
+            s_dht_was_ok = g_sensor.dht_ok;
         }
 
         if ((uint32_t)(now - last_mq2) >= pdMS_TO_TICKS(APP_MQ2_POLL_MS))
@@ -172,9 +209,50 @@ static void Task_Sensor(void *arg)
             mq2_adc_value = MQ2_Read_ADC_Filter();
             mq2_adc_value = MQ2_ApplyTempComp(mq2_adc_value, (int16_t)dht11_temp);
             MQ2_UpdateBaseline(mq2_adc_value);
+
+            /* MQ2 卡死检测（从裸机路径 app_poll_sensors 移植） */
+            {
+                if (mq2_adc_value > 4095u)
+                {
+                    s_mq2_fault = 1u;
+                }
+                else
+                {
+                    u16 diff = (mq2_adc_value > s_mq2_last_adc) ? (mq2_adc_value - s_mq2_last_adc) : (s_mq2_last_adc - mq2_adc_value);
+                    if (diff <= APP_MQ2_STUCK_DIFF_ADC)
+                    {
+                        if (s_mq2_stuck_cnt < 0xFFu) s_mq2_stuck_cnt++;
+                    }
+                    else
+                    {
+                        s_mq2_stuck_cnt = 0u;
+                        if (s_mq2_fault)
+                        {
+                            if (s_mq2_recover_cnt < 0xFFu) s_mq2_recover_cnt++;
+                            if (s_mq2_recover_cnt >= APP_MQ2_RECOVER_GOOD_COUNT)
+                            {
+                                s_mq2_fault = 0u;
+                                s_mq2_recover_cnt = 0u;
+                                SysLog_Add(LOG_EVT_CONFIG, "MQ2_RECOVER");
+                            }
+                        }
+                    }
+                    if (s_mq2_stuck_cnt >= APP_MQ2_STUCK_COUNT)
+                    {
+                        if (!s_mq2_fault)
+                        {
+                            SysLog_Add(LOG_EVT_ALARM, "MQ2_FAULT");
+                        }
+                        s_mq2_fault = 1u;
+                        s_mq2_recover_cnt = 0u;
+                    }
+                }
+                s_mq2_last_adc = mq2_adc_value;
+            }
+
             xSemaphoreTake(s_sensor_mtx, portMAX_DELAY);
             g_sensor.mq2_adc = mq2_adc_value;
-            g_sensor.mq2_alarm = MQ2_Check_Alarm(mq2_adc_value);
+            g_sensor.mq2_alarm = s_mq2_fault ? 0u : MQ2_Check_Alarm(mq2_adc_value);
             xSemaphoreGive(s_sensor_mtx);
 #if BOARD_MQ2_ALARM_ENABLE
             if (g_sensor.mq2_alarm && !s_mq2_was_alarm)
@@ -333,7 +411,7 @@ static void Task_Sensor(void *arg)
                 g_security_state = SEC_DISARMED;
         }
 
-        BEEP_Tick10ms();
+        for(int i=0;i<10;i++) BEEP_Tick10ms(); /* Task_Sensor 100ms周期, 调用10次补齐10ms间隔 */
         WDG_Mark(WDG_SRC_SENSOR);
         vTaskDelay(pdMS_TO_TICKS(APP_TASK_PERIOD_SENSOR_MS));
     }
