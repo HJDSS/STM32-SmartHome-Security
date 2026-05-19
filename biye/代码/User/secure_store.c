@@ -1,4 +1,4 @@
-#include "secure_store.h"
+﻿#include "secure_store.h"
 #include "stmflash.h"
 #include <stddef.h>
 #include "board_config.h"

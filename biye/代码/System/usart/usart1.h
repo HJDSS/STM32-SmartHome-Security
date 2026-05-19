@@ -1,4 +1,4 @@
-#ifndef __usart1_H
+﻿#ifndef __usart1_H
 #define __usart1_H	 
 #include "stm32f10x.h"
 

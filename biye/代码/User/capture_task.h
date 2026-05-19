@@ -1,4 +1,4 @@
-#ifndef __CAPTURE_TASK_H
+﻿#ifndef __CAPTURE_TASK_H
 #define __CAPTURE_TASK_H
 
 #include "sys.h"

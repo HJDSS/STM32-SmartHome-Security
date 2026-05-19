@@ -1,4 +1,4 @@
-#ifndef __LCD1602_H
+﻿#ifndef __LCD1602_H
 #define __LCD1602_H
 #include "delay.h"
 #include "sys.h"

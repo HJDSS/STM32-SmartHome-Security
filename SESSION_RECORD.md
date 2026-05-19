@@ -99,3 +99,25 @@ Keil MDK Rebuild All，链接错误 1 个 + 警告 2 个
 - 子Agent 2 审核：**通过**
 - syslog.c 中对 s_sensor_mtx 的访问均有 NULL 保护
 - 裸机模式（USE_FREERTOS=0）下两侧均不参与编译，无影响
+
+---
+
+## 修复会话 2026-05-19 #3 (编码修复)
+
+### 报错来源
+Keil MDK 中所有中文注释显示乱码
+
+### 根因
+61 个 .c/.h 文件为 UTF-8 无 BOM 编码，Keil MDK ARMCC V5 在中文 Windows 上默认以 GBK(cp936) 读取，导致中文显示为乱码
+
+### 修复方案
+为全部 61 个含中文注释的源文件添加 UTF-8 BOM (EF BB BF)，Keil µVision 5 识别 BOM 后以 UTF-8 正确显示
+
+### 修复记录
+
+| 序号 | 范围 | 文件数 |
+|------|------|:--:|
+| 6 | `Driver/` (30), `User/` (22), `System/` (7), `Middlewares/` (1), 含前次修复文件 | 61 |
+
+### 审核结果
+- 抽检 5 个文件：全部 BOM OK，文件大小增加 3 字节，内容完整

@@ -1,4 +1,4 @@
-#ifndef __APP_PARAMS_H
+﻿#ifndef __APP_PARAMS_H
 #define __APP_PARAMS_H
 
 #include "board_config.h"

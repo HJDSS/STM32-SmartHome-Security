@@ -1,4 +1,4 @@
-#ifndef __BARE_TASK_SCHED_H
+﻿#ifndef __BARE_TASK_SCHED_H
 #define __BARE_TASK_SCHED_H
 
 #include "sys.h"

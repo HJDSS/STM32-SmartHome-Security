@@ -1,4 +1,4 @@
-#include "lock_manager.h"
+﻿#include "lock_manager.h"
 #include "flash_store.h"
 #include "oled_view.h"
 #include "linkage.h"

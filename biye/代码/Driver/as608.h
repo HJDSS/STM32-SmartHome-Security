@@ -1,4 +1,4 @@
-#ifndef __AS608_H_
+﻿#ifndef __AS608_H_
 #define __AS608_H_
 
 #include "sys.h"

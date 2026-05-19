@@ -1,4 +1,4 @@
-#ifndef __HC_SR501_H
+﻿#ifndef __HC_SR501_H
 #define __HC_SR501_H
 
 #include "board_config.h"

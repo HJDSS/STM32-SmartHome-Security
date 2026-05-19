@@ -1,4 +1,4 @@
-#include "linkage.h"
+﻿#include "linkage.h"
 #include "board_config.h"
 #include <stdio.h>
 #include "usart1.h"

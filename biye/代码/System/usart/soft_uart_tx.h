@@ -1,4 +1,4 @@
-#ifndef __SOFT_UART_TX_H
+﻿#ifndef __SOFT_UART_TX_H
 #define __SOFT_UART_TX_H
 
 #include "board_config.h"

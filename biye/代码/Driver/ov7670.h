@@ -1,4 +1,4 @@
-#ifndef __OV7670_H
+﻿#ifndef __OV7670_H
 #define __OV7670_H
 
 #include "ov7670_fifo.h"

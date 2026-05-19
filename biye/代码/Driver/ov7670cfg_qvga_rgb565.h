@@ -1,4 +1,4 @@
-#ifndef __OV7670CFG_QVGA_RGB565_H
+﻿#ifndef __OV7670CFG_QVGA_RGB565_H
 #define __OV7670CFG_QVGA_RGB565_H
 
 #include "sys.h"

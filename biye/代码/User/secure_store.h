@@ -1,4 +1,4 @@
-#ifndef __SECURE_STORE_H
+﻿#ifndef __SECURE_STORE_H
 #define __SECURE_STORE_H
 
 #include "sys.h"

@@ -1,4 +1,4 @@
-#ifndef __APP_TYPES_H
+﻿#ifndef __APP_TYPES_H
 #define __APP_TYPES_H
 
 #include "sys.h"

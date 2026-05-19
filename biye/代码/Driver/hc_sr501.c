@@ -1,4 +1,4 @@
-#include "hc_sr501.h"
+﻿#include "hc_sr501.h"
 #include "delay.h"
 #include "app_params.h"
 /* EXTI 结构体/宏定义来自 stm32f10x_exti.h（Keil C89/老版库需显式 include） */

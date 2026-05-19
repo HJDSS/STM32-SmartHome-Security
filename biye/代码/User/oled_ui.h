@@ -1,4 +1,4 @@
-#ifndef OLED_UI_STR_H
+﻿#ifndef OLED_UI_STR_H
 #define OLED_UI_STR_H
 
 /* 128x64 / 8x16：一行固定 16 个半角，须与 OLED_ShowString(...,16) 完全一致。

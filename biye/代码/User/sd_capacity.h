@@ -1,4 +1,4 @@
-#ifndef __SD_CAPACITY_H
+﻿#ifndef __SD_CAPACITY_H
 #define __SD_CAPACITY_H
 
 #include "sys.h"

@@ -1,4 +1,4 @@
-#include "board_config.h"
+﻿#include "board_config.h"
 
 #if BOARD_PRINTF_SOFTUART_PC8
 

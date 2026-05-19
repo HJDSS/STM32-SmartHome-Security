@@ -1,4 +1,4 @@
-#include "bare_task_sched.h"
+﻿#include "bare_task_sched.h"
 #include "delay.h"
 
 static bare_task_t s_tasks[BARE_TASK_MAX];

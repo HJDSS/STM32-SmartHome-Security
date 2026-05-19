@@ -1,4 +1,4 @@
-#include "ov7670cfg_qvga_rgb565.h"
+﻿#include "ov7670cfg_qvga_rgb565.h"
 
 const u8 ov7670_init_reg_tbl[][2]=
 {

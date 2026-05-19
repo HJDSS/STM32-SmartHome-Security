@@ -1,4 +1,4 @@
-#include "mq2.h"
+﻿#include "mq2.h"
 #include "stm32f10x_adc.h"
 
 /* 滞回锁存：上电或调用 MQ2_Alarm_Latch_Reset 前勿误判 */
